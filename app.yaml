@@ -1,0 +1,43 @@
+# Databricks App Configuration
+# Deploy this app using Databricks Apps
+
+name: dq-rule-generator
+description: Data Quality Rule Generator with AI assistance
+
+# Entry point
+command:
+  - streamlit
+  - run
+  - app/app.py
+  - --server.port
+  - "8080"
+  - --server.address
+  - "0.0.0.0"
+
+# Environment variables (configure in Databricks Apps UI)
+env:
+  - name: DATABRICKS_HOST
+    description: Databricks workspace URL
+  - name: DQ_GENERATION_JOB_ID
+    description: Job ID for DQ rule generation notebook
+  - name: LAKEBASE_HOST
+    description: Lakebase database host
+  - name: LAKEBASE_DATABASE
+    description: Lakebase database name
+    default: dqx_rules_db
+  - name: MODEL_SERVING_ENDPOINT
+    description: Model serving endpoint for AI generation
+    default: databricks-meta-llama-3-1-70b-instruct
+  - name: SAMPLE_DATA_LIMIT
+    description: Maximum rows for sample data preview
+    default: "100"
+
+# Resources needed (Lakebase)
+resources:
+  - name: dqx-lakebase
+    type: oltp_database
+    description: Lakebase instance for storing DQ rules
+
+# Python dependencies
+dependencies:
+  - requirements.txt
