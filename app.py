@@ -234,11 +234,36 @@ Format your response as JSON with this structure:
         ) as analysis
         """
 
+        # Start async execution (0s = no wait, returns immediately with statement_id)
         response = ws.statement_execution.execute_statement(
             warehouse_id=warehouse_id,
             statement=sql,
-            wait_timeout="120s"
+            wait_timeout="0s"
         )
+
+        # Poll for results (AI queries can take longer)
+        import time
+        statement_id = response.statement_id
+        max_wait = 120  # seconds
+        poll_interval = 2  # seconds
+        elapsed = 0
+
+        while elapsed < max_wait:
+            status = ws.statement_execution.get_statement(statement_id)
+            state = status.status.state.value if status.status and status.status.state else None
+
+            if state == "SUCCEEDED":
+                response = status
+                break
+            elif state in ["FAILED", "CANCELED", "CLOSED"]:
+                error_msg = status.status.error.message if status.status.error else "Unknown error"
+                raise Exception(f"Query failed: {error_msg}")
+
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+        if elapsed >= max_wait:
+            raise Exception("AI analysis timed out after 120 seconds")
 
         if response.result and response.result.data_array and len(response.result.data_array) > 0:
             content = response.result.data_array[0][0]
