@@ -57,12 +57,19 @@ A Databricks notebook designed to run as a serverless job:
 - Validates rules against DQX schema
 - Returns structured JSON output
 
-### 3. AgentBricks Tool (`tools/dq_rule_summarizer.py`)
-An AI-powered tool for understanding and summarizing DQ rules:
-- Provides human-readable rule summaries
-- Returns editable JSON rule definitions
-- Offers improvement recommendations
-- Tracks affected columns and criticality levels
+### 3. AgentBricks Tools (Unity Catalog Functions)
+Unity Catalog Functions that can be registered in the Multi-Agent Supervisor UI:
+
+| Function | Purpose |
+|----------|---------|
+| `summarize_dq_rules` | Analyzes DQ rules and provides human-readable summaries |
+| `generate_dq_rules` | Generates DQ rules from natural language requirements |
+| `save_dq_rule` | Saves rules to Lakebase with versioning |
+
+**Setup notebooks:**
+- `notebooks/create_uc_function_summarizer.py` - Creates the summarizer function
+- `notebooks/create_uc_function_generator.py` - Creates the generator function
+- `notebooks/create_uc_function_save_rule.py` - Creates the save function
 
 ### 4. Lakebase Client (`lakebase/client.py`)
 PostgreSQL client for rule persistence:
@@ -125,6 +132,48 @@ from lakebase import get_lakebase_client
 client = get_lakebase_client()
 client.initialize_schema()
 ```
+
+### AgentBricks Setup (Multi-Agent Supervisor)
+
+1. **Create the Unity Catalog Functions** by running the setup notebooks:
+   - Run `notebooks/create_uc_function_summarizer.py`
+   - Run `notebooks/create_uc_function_generator.py`
+   - Run `notebooks/create_uc_function_save_rule.py`
+
+2. **Register in Multi-Agent Supervisor UI**:
+   - Navigate to **AI/ML → Agents** in Databricks
+   - Click **Create Multi-Agent Supervisor**
+   - Fill in the agent details:
+     - **Name**: `dq-agent-2025-xx-xx`
+     - **Description**: "Generates, summarizes, and saves data quality rules for tables"
+
+3. **Add Unity Catalog Functions as Tools**:
+
+   **Tool 1: DQ Rule Summarizer**
+   | Field | Value |
+   |-------|-------|
+   | Type | Unity Catalog Function |
+   | Unity Catalog function | `main.dq_tools.summarize_dq_rules` |
+   | Agent Name | DQ Rule Summarizer |
+   | Description | Analyzes data quality rules and provides comprehensive summaries including human-readable explanations, affected columns, criticality breakdown, and improvement recommendations. Use when users need to understand generated DQ rules. |
+
+   **Tool 2: DQ Rule Generator**
+   | Field | Value |
+   |-------|-------|
+   | Type | Unity Catalog Function |
+   | Unity Catalog function | `main.dq_tools.generate_dq_rules` |
+   | Agent Name | DQ Rule Generator |
+   | Description | Generates data quality rules based on natural language requirements. Takes a table name and description of desired checks. Use when users want to create new DQ rules. |
+
+   **Tool 3: DQ Rule Saver**
+   | Field | Value |
+   |-------|-------|
+   | Type | Unity Catalog Function |
+   | Unity Catalog function | `main.dq_tools.save_dq_rule` |
+   | Agent Name | DQ Rule Saver |
+   | Description | Saves data quality rules to Lakebase with automatic versioning. Use when users confirm they want to persist their DQ rules. |
+
+4. Click **Create Agent** to finalize
 
 ## Usage
 
@@ -230,25 +279,28 @@ Generated rules follow the DQX-compatible format:
 databricks_dqx_agent/
 ├── app/
 │   ├── __init__.py
-│   └── app.py              # Streamlit application
+│   └── app.py                        # Streamlit application
 ├── config/
 │   ├── __init__.py
-│   └── settings.py         # Configuration management
+│   └── settings.py                   # Configuration management
 ├── lakebase/
 │   ├── __init__.py
-│   └── client.py           # Lakebase client
+│   └── client.py                     # Lakebase client
 ├── notebooks/
 │   ├── __init__.py
-│   └── generate_dq_rules.py  # DQ generation notebook
+│   ├── generate_dq_rules.py          # DQ generation notebook (for Jobs)
+│   ├── create_uc_function_summarizer.py  # UC Function: Summarizer
+│   ├── create_uc_function_generator.py   # UC Function: Generator
+│   └── create_uc_function_save_rule.py   # UC Function: Save to Lakebase
 ├── tools/
 │   ├── __init__.py
-│   ├── agentbricks_registration.py  # AgentBricks integration
-│   └── dq_rule_summarizer.py        # Summarizer tool
+│   ├── agentbricks_registration.py   # AgentBricks integration (Python SDK)
+│   └── dq_rule_summarizer.py         # Summarizer tool (Python SDK)
 ├── utils/
 │   ├── __init__.py
-│   ├── databricks_client.py  # Databricks SDK utilities
-│   └── spark_utils.py        # Spark utilities
-├── app.yaml                  # Databricks App config
+│   ├── databricks_client.py          # Databricks SDK utilities
+│   └── spark_utils.py                # Spark utilities
+├── app.yaml                          # Databricks App config
 ├── requirements.txt
 └── README.md
 ```
