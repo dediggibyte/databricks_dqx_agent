@@ -83,8 +83,7 @@ def trigger_dq_generation_job(
             job_id=int(job_id),
             notebook_params={
                 "table_name": table_name,
-                "user_prompt": prompt,
-                "timestamp": datetime.now().isoformat()
+                "user_prompt": prompt
             }
         )
         return response.run_id
