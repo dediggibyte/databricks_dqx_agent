@@ -252,24 +252,30 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            color: var(--text-dark);
         }
 
         .data-table th, .data-table td {
             padding: 10px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-dark);
         }
 
         .data-table th {
             background: #f8f9fa;
             font-weight: 600;
-            color: #333;
+            color: var(--text-dark);
             position: sticky;
             top: 0;
         }
 
         .data-table tr:hover {
             background: #f8f9fa;
+        }
+
+        .data-table td {
+            background: white;
         }
 
         .table-container {
@@ -895,17 +901,20 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            color: var(--text-dark);
         }
 
         .history-table th, .history-table td {
             padding: 10px;
             text-align: left;
-            border-bottom: 1px solid #e8eaed;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-dark);
         }
 
         .history-table th {
             background: #f8f9fa;
             font-weight: 600;
+            color: var(--text-dark);
         }
 
         .history-table tr:hover {
