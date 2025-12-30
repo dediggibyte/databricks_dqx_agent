@@ -562,6 +562,266 @@
             color: #c5221f;
             border: 1px solid #f5c6cb;
         }
+
+        /* Step 4 Styles */
+        .lakebase-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-indicator.connected {
+            background: #34a853;
+        }
+
+        .status-indicator.disconnected {
+            background: #ea4335;
+        }
+
+        .status-indicator.checking {
+            background: #fbbc04;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .ai-analysis-container {
+            background: #f8f9fa;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .ai-analysis-container h3 {
+            margin-bottom: 10px;
+            color: #1a73e8;
+        }
+
+        .ai-description, .save-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .analysis-results {
+            margin-top: 20px;
+        }
+
+        .analysis-box {
+            background: white;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .analysis-box h4 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e8eaed;
+            padding-bottom: 8px;
+        }
+
+        .analysis-box p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .summary-analysis {
+            background: linear-gradient(135deg, #e8f0fe 0%, #f8f9fa 100%);
+            border: 1px solid #d2e3fc;
+        }
+
+        .score-box {
+            display: inline-block;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .quality-score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #1a73e8;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .rule-analysis-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .rule-analysis-item {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .rule-analysis-item .rule-name {
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+
+        .rule-analysis-item .rule-column {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .rule-analysis-item .rule-explanation {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .rule-analysis-item .rule-importance {
+            font-size: 12px;
+            color: #555;
+            font-style: italic;
+        }
+
+        .recommendations-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .recommendations-box li {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .save-section {
+            background: #f8f9fa;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .save-section h3 {
+            margin-bottom: 10px;
+            color: #137333;
+        }
+
+        .btn-large {
+            padding: 15px 30px;
+            font-size: 16px;
+        }
+
+        .save-result {
+            margin-top: 20px;
+        }
+
+        .save-success {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            background: #e6f4ea;
+            border: 1px solid #ceead6;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .success-icon {
+            font-size: 24px;
+            color: #137333;
+            background: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .save-details {
+            flex: 1;
+        }
+
+        .save-detail-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .save-detail-item label {
+            font-weight: 600;
+            color: #137333;
+            min-width: 80px;
+        }
+
+        .save-detail-item span {
+            color: #333;
+            font-family: monospace;
+        }
+
+        .history-section {
+            margin-top: 20px;
+        }
+
+        .history-section h3 {
+            margin-bottom: 0;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .history-table th, .history-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        .history-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .history-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .version-badge {
+            background: #1a73e8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .version-badge.active {
+            background: #137333;
+        }
     </style>
 </head>
 <body>
@@ -717,6 +977,113 @@
                 <button class="btn btn-success" onclick="downloadRules()">Download Rules JSON</button>
                 <button class="btn btn-primary" onclick="downloadEditedRules()">Download Edited Rules</button>
                 <button class="btn btn-secondary" onclick="resetForm()">Generate New Rules</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Confirm and Save -->
+        <div id="confirm-section" class="card hidden">
+            <h2>Step 4: Confirm & Save to Lakebase</h2>
+
+            <!-- Lakebase Status -->
+            <div class="lakebase-status" id="lakebase-status">
+                <span class="status-indicator" id="lakebase-indicator"></span>
+                <span id="lakebase-status-text">Checking Lakebase connection...</span>
+            </div>
+
+            <!-- AI Analysis Section -->
+            <div class="ai-analysis-container">
+                <h3>AI Analysis</h3>
+                <p class="ai-description">Use AI to analyze your DQ rules and get insights on coverage, quality, and recommendations.</p>
+
+                <button id="analyze-btn" class="btn btn-primary" onclick="analyzeRules()">
+                    Analyze Rules with AI
+                </button>
+
+                <div id="analysis-status" class="status-bar"></div>
+
+                <div id="analysis-results" class="analysis-results hidden">
+                    <!-- Summary -->
+                    <div class="analysis-box summary-analysis">
+                        <h4>Summary</h4>
+                        <p id="analysis-summary">-</p>
+                    </div>
+
+                    <!-- Quality Score -->
+                    <div class="analysis-box score-box">
+                        <div class="quality-score" id="quality-score">-</div>
+                        <div class="score-label">Quality Score</div>
+                    </div>
+
+                    <!-- Rule Analysis -->
+                    <div class="analysis-box">
+                        <h4>Rule-by-Rule Analysis</h4>
+                        <div id="rule-analysis-list" class="rule-analysis-list">
+                            <!-- Rule analysis items will be inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Coverage Assessment -->
+                    <div class="analysis-box">
+                        <h4>Coverage Assessment</h4>
+                        <p id="coverage-assessment">-</p>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="analysis-box recommendations-box">
+                        <h4>Recommendations</h4>
+                        <ul id="recommendations-list">
+                            <!-- Recommendations will be inserted here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save to Lakebase Section -->
+            <div class="save-section">
+                <h3>Save to Lakebase</h3>
+                <p class="save-description">Save your confirmed DQ rules to Lakebase with version tracking. Previous versions will be preserved for audit purposes.</p>
+
+                <button id="save-btn" class="btn btn-success btn-large" onclick="confirmAndSave()" disabled>
+                    Confirm & Save Rules
+                </button>
+
+                <div id="save-status" class="status-bar"></div>
+
+                <div id="save-result" class="save-result hidden">
+                    <div class="save-success">
+                        <span class="success-icon">✓</span>
+                        <div class="save-details">
+                            <div class="save-detail-item">
+                                <label>Version:</label>
+                                <span id="saved-version">-</span>
+                            </div>
+                            <div class="save-detail-item">
+                                <label>Saved At:</label>
+                                <span id="saved-at">-</span>
+                            </div>
+                            <div class="save-detail-item">
+                                <label>Rule ID:</label>
+                                <span id="saved-id">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version History -->
+            <div class="history-section">
+                <h3 class="collapsible-header" onclick="toggleSection('history-section')">
+                    <span>Version History</span>
+                    <span class="chevron" id="history-chevron">&#9660;</span>
+                </h3>
+                <div class="collapsible-content" id="history-section">
+                    <button class="btn btn-sm btn-secondary" onclick="loadHistory()" style="margin-bottom: 15px;">
+                        Load History
+                    </button>
+                    <div id="history-container">
+                        <p style="color: #666;">Click "Load History" to view previous versions.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -966,6 +1333,9 @@
             const resultsSection = document.getElementById('results-section');
             resultsSection.classList.remove('hidden');
 
+            // Also show Step 4 section
+            showConfirmSection();
+
             // Populate metadata
             const metadata = data.metadata || {};
             document.getElementById('result-rules-count').textContent = metadata.rules_generated || (data.rules ? data.rules.length : 0);
@@ -1167,8 +1537,277 @@
         function resetForm() {
             document.getElementById('prompt').value = '';
             document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('confirm-section').classList.add('hidden');
             document.getElementById('status-bar').className = 'status-bar';
             currentRules = null;
+            currentAnalysis = null;
+        }
+
+        // ============================================================
+        // STEP 4: CONFIRM AND SAVE FUNCTIONS
+        // ============================================================
+
+        let currentAnalysis = null;
+        let lakebaseConnected = false;
+
+        function showConfirmSection() {
+            document.getElementById('confirm-section').classList.remove('hidden');
+            checkLakebaseStatus();
+        }
+
+        async function checkLakebaseStatus() {
+            const indicator = document.getElementById('lakebase-indicator');
+            const statusText = document.getElementById('lakebase-status-text');
+
+            indicator.className = 'status-indicator checking';
+            statusText.textContent = 'Checking Lakebase connection...';
+
+            try {
+                const response = await fetch('/api/lakebase/status');
+                const status = await response.json();
+
+                if (status.connected) {
+                    indicator.className = 'status-indicator connected';
+                    statusText.textContent = `Connected to Lakebase (${status.host})`;
+                    lakebaseConnected = true;
+                    document.getElementById('save-btn').disabled = false;
+                } else if (status.configured) {
+                    indicator.className = 'status-indicator disconnected';
+                    statusText.textContent = `Connection failed: ${status.error || 'Unknown error'}`;
+                    lakebaseConnected = false;
+                } else {
+                    indicator.className = 'status-indicator disconnected';
+                    statusText.textContent = 'Lakebase not configured. Set LAKEBASE_HOST, LAKEBASE_USER, LAKEBASE_PASSWORD in app.yaml';
+                    lakebaseConnected = false;
+                }
+            } catch (e) {
+                indicator.className = 'status-indicator disconnected';
+                statusText.textContent = 'Error checking Lakebase status';
+                lakebaseConnected = false;
+            }
+        }
+
+        async function analyzeRules() {
+            const btn = document.getElementById('analyze-btn');
+            const statusBar = document.getElementById('analysis-status');
+
+            // Get current rules from editor
+            let rules;
+            try {
+                rules = JSON.parse(document.getElementById('rules-json-editor').value);
+            } catch (e) {
+                statusBar.className = 'status-bar error';
+                statusBar.textContent = 'Invalid JSON in rules editor. Please fix before analyzing.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Analyzing...';
+            statusBar.className = 'status-bar info';
+            statusBar.textContent = 'Analyzing DQ rules with AI...';
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rules: rules,
+                        table_name: currentRules ? currentRules.table_name : '',
+                        user_prompt: currentRules ? currentRules.user_prompt : ''
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentAnalysis = result.analysis;
+                    displayAnalysisResults(result.analysis);
+                    statusBar.className = 'status-bar success';
+                    statusBar.textContent = 'Analysis complete!';
+
+                    // Enable save button if Lakebase is connected
+                    if (lakebaseConnected) {
+                        document.getElementById('save-btn').disabled = false;
+                    }
+                } else {
+                    statusBar.className = 'status-bar error';
+                    statusBar.textContent = `Analysis failed: ${result.error}`;
+                }
+            } catch (e) {
+                statusBar.className = 'status-bar error';
+                statusBar.textContent = `Error: ${e.message}`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Analyze Rules with AI';
+        }
+
+        function displayAnalysisResults(analysis) {
+            const resultsDiv = document.getElementById('analysis-results');
+            resultsDiv.classList.remove('hidden');
+
+            // Handle raw response (when JSON parsing failed in backend)
+            if (analysis.raw_response) {
+                document.getElementById('analysis-summary').textContent = analysis.summary;
+                document.getElementById('quality-score').textContent = '-';
+                document.getElementById('coverage-assessment').textContent = 'See summary above';
+                document.getElementById('rule-analysis-list').innerHTML = '<p style="color: #666;">Detailed analysis not available in structured format.</p>';
+                document.getElementById('recommendations-list').innerHTML = '<li>See summary for recommendations</li>';
+                return;
+            }
+
+            // Display summary
+            document.getElementById('analysis-summary').textContent = analysis.summary || '-';
+
+            // Display quality score
+            const score = analysis.overall_quality_score;
+            document.getElementById('quality-score').textContent = score ? `${score}/10` : '-';
+
+            // Display rule analysis
+            const ruleAnalysisList = document.getElementById('rule-analysis-list');
+            if (analysis.rule_analysis && analysis.rule_analysis.length > 0) {
+                ruleAnalysisList.innerHTML = analysis.rule_analysis.map(rule => `
+                    <div class="rule-analysis-item">
+                        <div class="rule-name">${escapeHtml(rule.rule_function || '-')}</div>
+                        <div class="rule-column">Column: ${escapeHtml(rule.column || '-')}</div>
+                        <div class="rule-explanation">${escapeHtml(rule.explanation || '-')}</div>
+                        <div class="rule-importance"><strong>Importance:</strong> ${escapeHtml(rule.importance || '-')}</div>
+                    </div>
+                `).join('');
+            } else {
+                ruleAnalysisList.innerHTML = '<p style="color: #666;">No detailed rule analysis available.</p>';
+            }
+
+            // Display coverage assessment
+            document.getElementById('coverage-assessment').textContent = analysis.coverage_assessment || '-';
+
+            // Display recommendations
+            const recommendationsList = document.getElementById('recommendations-list');
+            if (analysis.recommendations && analysis.recommendations.length > 0) {
+                recommendationsList.innerHTML = analysis.recommendations.map(rec =>
+                    `<li>${escapeHtml(rec)}</li>`
+                ).join('');
+            } else {
+                recommendationsList.innerHTML = '<li>No additional recommendations.</li>';
+            }
+        }
+
+        async function confirmAndSave() {
+            const btn = document.getElementById('save-btn');
+            const statusBar = document.getElementById('save-status');
+
+            // Get current rules from editor
+            let rules;
+            try {
+                rules = JSON.parse(document.getElementById('rules-json-editor').value);
+            } catch (e) {
+                statusBar.className = 'status-bar error';
+                statusBar.textContent = 'Invalid JSON in rules editor. Please fix before saving.';
+                return;
+            }
+
+            if (!currentRules || !currentRules.table_name) {
+                statusBar.className = 'status-bar error';
+                statusBar.textContent = 'No table name available. Please generate rules first.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Saving...';
+            statusBar.className = 'status-bar info';
+            statusBar.textContent = 'Saving rules to Lakebase...';
+
+            try {
+                const response = await fetch('/api/confirm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        rules: rules,
+                        table_name: currentRules.table_name,
+                        user_prompt: currentRules.user_prompt || '',
+                        ai_summary: currentAnalysis,
+                        metadata: currentRules.metadata || {}
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    statusBar.className = 'status-bar success';
+                    statusBar.textContent = 'Rules saved successfully!';
+
+                    // Display save result
+                    document.getElementById('save-result').classList.remove('hidden');
+                    document.getElementById('saved-version').textContent = `v${result.version}`;
+                    document.getElementById('saved-at').textContent = result.created_at || new Date().toISOString();
+                    document.getElementById('saved-id').textContent = result.id;
+                } else {
+                    statusBar.className = 'status-bar error';
+                    statusBar.textContent = `Save failed: ${result.error}`;
+                }
+            } catch (e) {
+                statusBar.className = 'status-bar error';
+                statusBar.textContent = `Error: ${e.message}`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Confirm & Save Rules';
+        }
+
+        async function loadHistory() {
+            const container = document.getElementById('history-container');
+
+            if (!currentRules || !currentRules.table_name) {
+                container.innerHTML = '<p style="color: #c5221f;">No table selected. Generate rules first.</p>';
+                return;
+            }
+
+            container.innerHTML = '<p>Loading history...</p>';
+
+            try {
+                const response = await fetch(`/api/history/${encodeURIComponent(currentRules.table_name)}`);
+                const result = await response.json();
+
+                if (result.success && result.history.length > 0) {
+                    let html = `
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Created At</th>
+                                    <th>Rules</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    result.history.forEach(item => {
+                        const rulesCount = Array.isArray(item.rules) ? item.rules.length : 0;
+                        const statusBadge = item.is_active
+                            ? '<span class="version-badge active">Active</span>'
+                            : '<span class="version-badge">Archived</span>';
+
+                        html += `
+                            <tr>
+                                <td>v${item.version}</td>
+                                <td>${item.created_at || '-'}</td>
+                                <td>${rulesCount} rules</td>
+                                <td>${statusBadge}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else if (result.success) {
+                    container.innerHTML = '<p style="color: #666;">No version history found for this table.</p>';
+                } else {
+                    container.innerHTML = `<p style="color: #c5221f;">Error: ${result.error}</p>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<p style="color: #c5221f;">Error loading history: ${e.message}</p>`;
+            }
         }
     </script>
 </body>

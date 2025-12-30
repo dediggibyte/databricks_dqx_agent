@@ -5,12 +5,15 @@ A Databricks App for generating DQ rules using AI assistance.
 
 Step 1: Select a table from Unity Catalog
 Step 2: Enter requirements and trigger DQ rule generation job
+Step 3: Review and edit generated rules
+Step 4: Confirm and save rules to Lakebase with AI summary
 """
 
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import os
 import json
+import uuid
 from datetime import datetime
 from databricks.sdk import WorkspaceClient
 
@@ -22,6 +25,13 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "dq-rule-generator-secret-key")
 # Configuration
 DQ_GENERATION_JOB_ID = os.getenv("DQ_GENERATION_JOB_ID")
 SAMPLE_DATA_LIMIT = int(os.getenv("SAMPLE_DATA_LIMIT", "100"))
+
+# Lakebase Configuration (OAuth-based)
+LAKEBASE_HOST = os.getenv("LAKEBASE_HOST")
+LAKEBASE_DATABASE = os.getenv("LAKEBASE_DATABASE", "databricks_postgres")
+
+# Model Serving Endpoint for AgentBricks
+MODEL_SERVING_ENDPOINT = os.getenv("MODEL_SERVING_ENDPOINT", "databricks-claude-sonnet-4-5")
 
 # Global workspace client
 _workspace_client = None
@@ -172,6 +182,288 @@ def get_table_sample(full_table_name, limit=100):
 
 
 # ============================================================
+# AGENTBRICKS - DQ RULE ANALYZER TOOL
+# ============================================================
+
+def analyze_dq_rules_with_agent(rules, table_name, user_prompt):
+    """
+    AgentBricks tool that analyzes DQ rules and provides summary with reasoning.
+    Uses Databricks Model Serving endpoint for LLM inference.
+    """
+    try:
+        ws = get_workspace_client()
+
+        # Build the analysis prompt
+        rules_json = json.dumps(rules, indent=2)
+        analysis_prompt = f"""You are a Data Quality expert. Analyze the following DQ rules generated for table '{table_name}'.
+
+User's original requirement: {user_prompt}
+
+Generated DQ Rules:
+{rules_json}
+
+Please provide:
+1. **Summary**: A concise summary of what these rules check (2-3 sentences)
+2. **Rule Analysis**: For each rule, explain:
+   - What it checks
+   - Why it's important for data quality
+   - The criticality level and its justification
+3. **Coverage Assessment**: How well do these rules cover the user's requirements?
+4. **Recommendations**: Any additional rules that might be beneficial
+
+Format your response as JSON with the following structure:
+{{
+    "summary": "...",
+    "rule_analysis": [
+        {{
+            "rule_function": "...",
+            "column": "...",
+            "explanation": "...",
+            "importance": "...",
+            "criticality_justification": "..."
+        }}
+    ],
+    "coverage_assessment": "...",
+    "recommendations": ["...", "..."],
+    "overall_quality_score": 1-10
+}}"""
+
+        # Call the model serving endpoint
+        response = ws.serving_endpoints.query(
+            name=MODEL_SERVING_ENDPOINT,
+            messages=[
+                {"role": "user", "content": analysis_prompt}
+            ],
+            max_tokens=2000
+        )
+
+        # Parse the response
+        if response.choices and len(response.choices) > 0:
+            content = response.choices[0].message.content
+
+            # Try to extract JSON from the response
+            try:
+                # Find JSON in the response
+                import re
+                json_match = re.search(r'\{[\s\S]*\}', content)
+                if json_match:
+                    analysis = json.loads(json_match.group())
+                    return {"success": True, "analysis": analysis}
+            except json.JSONDecodeError:
+                pass
+
+            # If JSON parsing fails, return raw content
+            return {"success": True, "analysis": {"summary": content, "raw_response": True}}
+
+        return {"success": False, "error": "No response from model"}
+
+    except Exception as e:
+        print(f"Error analyzing rules with agent: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ============================================================
+# LAKEBASE - DQ RULES STORAGE (OAuth-based)
+# ============================================================
+
+def get_user_oauth_credentials():
+    """Get user OAuth credentials from request headers."""
+    user_token = request.headers.get('x-forwarded-access-token')
+    user_email = request.headers.get('x-forwarded-email')
+
+    if not user_token:
+        raise Exception("No OAuth token found. User must be authenticated via Databricks Apps.")
+
+    if not user_email:
+        # Try to get user email from Databricks SDK using the token
+        try:
+            from databricks.sdk import WorkspaceClient
+            ws = WorkspaceClient(token=user_token)
+            current_user = ws.current_user.me()
+            user_email = current_user.user_name
+        except Exception as e:
+            raise Exception(f"Could not determine user email: {e}")
+
+    return user_email, user_token
+
+
+def get_lakebase_connection():
+    """Get PostgreSQL connection to Lakebase using OAuth."""
+    import psycopg2
+
+    if not LAKEBASE_HOST:
+        raise Exception("Lakebase connection not configured. Set LAKEBASE_HOST in app.yaml")
+
+    user_email, user_token = get_user_oauth_credentials()
+
+    conn = psycopg2.connect(
+        host=LAKEBASE_HOST,
+        database=LAKEBASE_DATABASE,
+        user=user_email,
+        password=user_token,
+        port=5432,
+        sslmode='require'
+    )
+    return conn
+
+
+def init_lakebase_table():
+    """Initialize the DQ rules table in Lakebase if it doesn't exist."""
+    try:
+        conn = get_lakebase_connection()
+        cursor = conn.cursor()
+
+        # Create table for storing DQ rules with versioning
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS dq_rules_events (
+                id UUID PRIMARY KEY,
+                table_name VARCHAR(500) NOT NULL,
+                version INTEGER NOT NULL,
+                rules JSONB NOT NULL,
+                user_prompt TEXT,
+                ai_summary JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by VARCHAR(255),
+                is_active BOOLEAN DEFAULT TRUE,
+                metadata JSONB,
+                UNIQUE(table_name, version)
+            )
+        """)
+
+        # Create index for faster queries
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dq_rules_table_name
+            ON dq_rules_events(table_name)
+        """)
+
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dq_rules_active
+            ON dq_rules_events(table_name, is_active)
+            WHERE is_active = TRUE
+        """)
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error initializing Lakebase table: {e}")
+        return False
+
+
+def get_next_version(table_name):
+    """Get the next version number for a table's DQ rules."""
+    try:
+        conn = get_lakebase_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT COALESCE(MAX(version), 0) + 1
+            FROM dq_rules_events
+            WHERE table_name = %s
+        """, (table_name,))
+
+        result = cursor.fetchone()
+        next_version = result[0] if result else 1
+
+        cursor.close()
+        conn.close()
+        return next_version
+    except Exception as e:
+        print(f"Error getting next version: {e}")
+        return 1
+
+
+def save_dq_rules_to_lakebase(table_name, rules, user_prompt, ai_summary, metadata=None):
+    """Save DQ rules to Lakebase with versioning."""
+    try:
+        # Initialize table if needed
+        init_lakebase_table()
+
+        conn = get_lakebase_connection()
+        cursor = conn.cursor()
+
+        # Get next version
+        version = get_next_version(table_name)
+
+        # Deactivate previous versions
+        cursor.execute("""
+            UPDATE dq_rules_events
+            SET is_active = FALSE
+            WHERE table_name = %s AND is_active = TRUE
+        """, (table_name,))
+
+        # Insert new version
+        rule_id = str(uuid.uuid4())
+        cursor.execute("""
+            INSERT INTO dq_rules_events
+            (id, table_name, version, rules, user_prompt, ai_summary, created_by, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id, version, created_at
+        """, (
+            rule_id,
+            table_name,
+            version,
+            json.dumps(rules),
+            user_prompt,
+            json.dumps(ai_summary) if ai_summary else None,
+            "dq-rule-generator-app",
+            json.dumps(metadata) if metadata else None
+        ))
+
+        result = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return {
+            "success": True,
+            "id": result[0],
+            "version": result[1],
+            "created_at": result[2].isoformat() if result[2] else None
+        }
+    except Exception as e:
+        print(f"Error saving rules to Lakebase: {e}")
+        return {"success": False, "error": str(e)}
+
+
+def get_dq_rules_history(table_name, limit=10):
+    """Get history of DQ rules for a table."""
+    try:
+        conn = get_lakebase_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT id, version, rules, user_prompt, ai_summary, created_at, is_active
+            FROM dq_rules_events
+            WHERE table_name = %s
+            ORDER BY version DESC
+            LIMIT %s
+        """, (table_name, limit))
+
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        history = []
+        for row in rows:
+            history.append({
+                "id": str(row[0]),
+                "version": row[1],
+                "rules": row[2],
+                "user_prompt": row[3],
+                "ai_summary": row[4],
+                "created_at": row[5].isoformat() if row[5] else None,
+                "is_active": row[6]
+            })
+
+        return {"success": True, "history": history}
+    except Exception as e:
+        print(f"Error getting rules history: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# ============================================================
 # JOB TRIGGER API
 # ============================================================
 
@@ -309,6 +601,101 @@ def api_status(run_id):
 def health():
     """Health check endpoint."""
     return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
+
+
+# ============================================================
+# STEP 4: CONFIRM AND SAVE ROUTES
+# ============================================================
+
+@app.route("/api/analyze", methods=["POST"])
+def api_analyze():
+    """API: Analyze DQ rules using AgentBricks tool."""
+    data = request.json
+    rules = data.get("rules", [])
+    table_name = data.get("table_name", "")
+    user_prompt = data.get("user_prompt", "")
+
+    if not rules:
+        return jsonify({"success": False, "error": "No rules provided"}), 400
+
+    result = analyze_dq_rules_with_agent(rules, table_name, user_prompt)
+    return jsonify(result)
+
+
+@app.route("/api/confirm", methods=["POST"])
+def api_confirm():
+    """API: Confirm and save DQ rules to Lakebase."""
+    data = request.json
+    rules = data.get("rules", [])
+    table_name = data.get("table_name", "")
+    user_prompt = data.get("user_prompt", "")
+    ai_summary = data.get("ai_summary")
+    metadata = data.get("metadata")
+
+    if not rules:
+        return jsonify({"success": False, "error": "No rules provided"}), 400
+
+    if not table_name:
+        return jsonify({"success": False, "error": "No table name provided"}), 400
+
+    # Save to Lakebase
+    result = save_dq_rules_to_lakebase(
+        table_name=table_name,
+        rules=rules,
+        user_prompt=user_prompt,
+        ai_summary=ai_summary,
+        metadata=metadata
+    )
+
+    return jsonify(result)
+
+
+@app.route("/api/history/<path:table_name>")
+def api_history(table_name):
+    """API: Get DQ rules history for a table."""
+    limit = request.args.get("limit", 10, type=int)
+    result = get_dq_rules_history(table_name, limit)
+    return jsonify(result)
+
+
+@app.route("/api/lakebase/status")
+def api_lakebase_status():
+    """API: Check Lakebase connection status (OAuth-based)."""
+    try:
+        if not LAKEBASE_HOST:
+            return jsonify({
+                "connected": False,
+                "configured": False,
+                "message": "Lakebase host not configured"
+            })
+
+        # Check if user has OAuth token
+        user_token = request.headers.get('x-forwarded-access-token')
+        if not user_token:
+            return jsonify({
+                "connected": False,
+                "configured": True,
+                "message": "No OAuth token - user must be authenticated via Databricks Apps"
+            })
+
+        conn = get_lakebase_connection()
+        conn.close()
+
+        user_email, _ = get_user_oauth_credentials()
+        return jsonify({
+            "connected": True,
+            "configured": True,
+            "host": LAKEBASE_HOST,
+            "database": LAKEBASE_DATABASE,
+            "auth_type": "oauth",
+            "user": user_email
+        })
+    except Exception as e:
+        return jsonify({
+            "connected": False,
+            "configured": True,
+            "error": str(e)
+        })
 
 
 # ============================================================

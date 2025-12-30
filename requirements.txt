@@ -13,3 +13,6 @@ databricks-sdk>=0.56.0
 
 # Utilities
 pandas>=2.0.0
+
+# Lakebase PostgreSQL Connection
+psycopg2-binary>=2.9.0
