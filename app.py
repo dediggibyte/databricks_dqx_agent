@@ -116,8 +116,24 @@ def get_schemas(catalog):
 def get_tables(catalog, schema):
     """Get list of tables in a schema."""
     try:
-        tables = execute_sql(f"SHOW TABLES IN `{catalog}`.`{schema}`")
-        return tables if tables else []
+        # SHOW TABLES returns: database, tableName, isTemporary
+        # We need the second column (index 1) for table names
+        ws = get_workspace_client()
+        warehouse_id = get_sql_warehouse_id()
+
+        if not warehouse_id:
+            raise Exception("No SQL warehouse available")
+
+        response = ws.statement_execution.execute_statement(
+            warehouse_id=warehouse_id,
+            statement=f"SHOW TABLES IN `{catalog}`.`{schema}`",
+            wait_timeout="30s"
+        )
+
+        if response.result and response.result.data_array:
+            # Table name is in the second column (index 1)
+            return [row[1] for row in response.result.data_array]
+        return []
     except Exception as e:
         print(f"Error listing tables: {e}")
         # Fallback to SDK
