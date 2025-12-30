@@ -91,98 +91,84 @@ for col_name, profile in profiles.items():
 
 # MAGIC %md
 # MAGIC ## Step 3: Generate DQ Rules Using AI
+# MAGIC
+# MAGIC Using DQX's built-in `DQGenerator.generate_dq_rules_ai_assisted()` method as documented at:
+# MAGIC https://databrickslabs.github.io/dqx/docs/guide/ai_assisted_quality_checks_generation/
 
 # COMMAND ----------
 
 import json
-import dspy
-
-# Configure DSPy for Databricks model serving
-# Use the configured model serving endpoint
 import os
+from databricks.labs.dqx.profiler.generator import DQGenerator
+from databricks.labs.dqx.config import InputConfig, LLMModelConfig
 
-model_endpoint = os.getenv(
+# Configure the LLM model
+model_name = os.getenv(
     "MODEL_SERVING_ENDPOINT",
-    "databricks-meta-llama-3-1-70b-instruct"
+    "databricks/databricks-claude-sonnet-4-5"
 )
 
-# Initialize DSPy with Databricks
-lm = dspy.LM(
-    model=f"databricks/{model_endpoint}",
-    api_base=f"{ws.config.host}/serving-endpoints",
-    api_key=ws.config.token
+llm_config = LLMModelConfig(model_name=model_name)
+
+# Initialize the DQ Generator with the workspace client and LLM config
+generator = DQGenerator(
+    workspace_client=ws,
+    spark=spark,
+    llm_model_config=llm_config
 )
-dspy.configure(lm=lm)
+
+print(f"Initialized DQGenerator with model: {model_name}")
 
 # COMMAND ----------
 
-# Define the DQ rule generation signature
-class GenerateDQRules(dspy.Signature):
-    """Generate data quality rules based on data profiles and user requirements."""
+# Generate DQ rules using the AI-assisted approach
+# This combines:
+# 1. Schema awareness from InputConfig (table location)
+# 2. Statistical profiling from summary_stats
+# 3. Natural language requirements from user_prompt
 
-    table_name: str = dspy.InputField(desc="The name of the table")
-    column_profiles: str = dspy.InputField(desc="JSON string of column profiles")
-    user_requirements: str = dspy.InputField(desc="User's natural language requirements")
-    sample_data: str = dspy.InputField(desc="Sample data from the table as JSON")
+print("Generating DQ rules with AI assistance...")
 
-    dq_rules: str = dspy.OutputField(desc="JSON array of DQ rule definitions")
-    summary: str = dspy.OutputField(desc="Human-readable summary of the generated rules")
+# Create input config for schema-aware generation
+input_config = InputConfig(location=table_name)
 
-
-# Create the rule generator
-rule_generator = dspy.ChainOfThought(GenerateDQRules)
-
-# COMMAND ----------
-
-# Prepare inputs for the LLM
-column_profiles_json = json.dumps(profiles, default=str)
-
-# Get sample data
-sample_rows = df.limit(10).toPandas().to_dict(orient='records')
-sample_data_json = json.dumps(sample_rows, default=str)
-
-print("Generating DQ rules with AI...")
-
-# Generate rules
-result = rule_generator(
-    table_name=table_name,
-    column_profiles=column_profiles_json,
-    user_requirements=user_prompt,
-    sample_data=sample_data_json
+# Generate rules using the built-in AI-assisted method
+# Pass both the profiler statistics and user requirements
+generated_checks = generator.generate_dq_rules_ai_assisted(
+    user_input=user_prompt,
+    input_config=input_config,
+    summary_stats=summary_stats
 )
 
-print("Generation complete!")
+print(f"Generation complete! Generated {len(generated_checks)} rules.")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 4: Parse and Validate Generated Rules
+# MAGIC ## Step 4: Display Generated Rules
+# MAGIC
+# MAGIC The `generate_dq_rules_ai_assisted()` method returns validated DQX check objects directly.
 
 # COMMAND ----------
 
-# Parse the generated rules
-try:
-    generated_rules = json.loads(result.dq_rules)
-except json.JSONDecodeError:
-    # Try to extract JSON from the response
-    import re
-    json_match = re.search(r'\[.*\]', result.dq_rules, re.DOTALL)
-    if json_match:
-        generated_rules = json.loads(json_match.group())
-    else:
-        generated_rules = []
+# Display the generated checks
+print("Generated DQ Rules:")
+print("-" * 50)
 
-summary = result.summary
-
-print("Generated Rules Summary:")
-print(summary)
-print("\nRules JSON:")
-print(json.dumps(generated_rules, indent=2))
+for i, check in enumerate(generated_checks, 1):
+    print(f"\nRule {i}:")
+    print(f"  Name: {check.name}")
+    print(f"  Criticality: {check.criticality}")
+    print(f"  Check Function: {check.check_func}")
+    if hasattr(check, 'arguments') and check.arguments:
+        print(f"  Arguments: {check.arguments}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 5: Validate Rules Against DQX Schema
+# MAGIC ## Step 5: Optionally Save Rules with DQEngine
+# MAGIC
+# MAGIC You can save the generated rules to a workspace file for reuse.
 
 # COMMAND ----------
 
@@ -191,25 +177,20 @@ from databricks.labs.dqx.engine import DQEngine
 # Initialize DQX engine
 dq_engine = DQEngine(ws)
 
-# Validate the generated rules format
+# Convert checks to serializable format for output
 validated_rules = []
-for rule in generated_rules:
-    # Ensure required fields
-    validated_rule = {
-        "name": rule.get("name", f"rule_{len(validated_rules) + 1}"),
-        "criticality": rule.get("criticality", "warn"),
-        "check": rule.get("check", {}),
-        "filter": rule.get("filter"),
+for check in generated_checks:
+    rule_dict = {
+        "name": check.name,
+        "criticality": check.criticality,
+        "check": {
+            "function": check.check_func,
+            "arguments": getattr(check, 'arguments', {})
+        }
     }
+    validated_rules.append(rule_dict)
 
-    # Validate check structure
-    check = validated_rule["check"]
-    if isinstance(check, dict) and "function" in check:
-        validated_rules.append(validated_rule)
-    else:
-        print(f"Skipping invalid rule: {rule.get('name', 'unnamed')}")
-
-print(f"\nValidated {len(validated_rules)} rules out of {len(generated_rules)}")
+print(f"\nPrepared {len(validated_rules)} rules for output")
 
 # COMMAND ----------
 
@@ -217,6 +198,10 @@ print(f"\nValidated {len(validated_rules)} rules out of {len(generated_rules)}")
 # MAGIC ## Step 6: Return Results
 
 # COMMAND ----------
+
+# Generate a summary of the rules
+rule_names = [r["name"] for r in validated_rules]
+summary = f"Generated {len(validated_rules)} data quality rules for table '{table_name}': {', '.join(rule_names)}"
 
 # Prepare the output
 output = {
@@ -234,6 +219,10 @@ output = {
     }
 }
 
+print("Output Summary:")
+print(summary)
+print(f"\nRules: {json.dumps(validated_rules, indent=2)}")
+
 # Return as notebook output
 output_json = json.dumps(output, default=str)
 dbutils.notebook.exit(output_json)
@@ -241,29 +230,20 @@ dbutils.notebook.exit(output_json)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Example DQ Rule Format
+# MAGIC ## DQX Built-in Check Functions
 # MAGIC
-# MAGIC The generated rules follow this DQX-compatible format:
+# MAGIC The `generate_dq_rules_ai_assisted()` method uses DQX's built-in check functions:
 # MAGIC
-# MAGIC ```json
-# MAGIC [
-# MAGIC   {
-# MAGIC     "name": "valid_email_check",
-# MAGIC     "criticality": "error",
-# MAGIC     "check": {
-# MAGIC       "function": "is_not_null_and_not_empty",
-# MAGIC       "arguments": {"col_name": "email"}
-# MAGIC     },
-# MAGIC     "filter": null
-# MAGIC   },
-# MAGIC   {
-# MAGIC     "name": "positive_amount_check",
-# MAGIC     "criticality": "warn",
-# MAGIC     "check": {
-# MAGIC       "function": "is_greater_than",
-# MAGIC       "arguments": {"col_name": "amount", "limit": 0}
-# MAGIC     },
-# MAGIC     "filter": "status = 'active'"
-# MAGIC   }
-# MAGIC ]
-# MAGIC ```
+# MAGIC | Function | Description |
+# MAGIC |----------|-------------|
+# MAGIC | `is_not_null` | Column value is not null |
+# MAGIC | `is_not_null_and_not_empty` | Column value is not null and not empty string |
+# MAGIC | `is_in_list` | Column value is in a specified list |
+# MAGIC | `is_not_in_list` | Column value is not in a specified list |
+# MAGIC | `is_greater_than` | Column value is greater than limit |
+# MAGIC | `is_less_than` | Column value is less than limit |
+# MAGIC | `is_in_range` | Column value is within a range |
+# MAGIC | `matches_regex` | Column value matches a regex pattern |
+# MAGIC | `is_unique` | Column values are unique |
+# MAGIC
+# MAGIC See full documentation: https://databrickslabs.github.io/dqx/docs/guide/ai_assisted_quality_checks_generation/
