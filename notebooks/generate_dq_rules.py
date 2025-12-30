@@ -75,12 +75,44 @@ print(f"Profiling complete. Generated {len(profiles)} column profiles.")
 # COMMAND ----------
 
 # Display profiling results
-for col_name, profile in profiles.items():
-    print(f"\nColumn: {col_name}")
-    print(f"  Type: {profile.get('data_type', 'unknown')}")
-    print(f"  Null %: {profile.get('null_percentage', 0):.2f}%")
-    if 'unique_count' in profile:
-        print(f"  Unique values: {profile['unique_count']}")
+print("\nColumn Profiles:")
+print("=" * 60)
+
+# Handle different possible structures from the profiler
+if isinstance(profiles, dict):
+    # If profiles is a dictionary with column names as keys
+    for col_name, profile in profiles.items():
+        print(f"\nColumn: {col_name}")
+        if isinstance(profile, dict):
+            print(f"  Type: {profile.get('data_type', profile.get('type', 'unknown'))}")
+            print(f"  Null %: {profile.get('null_percentage', profile.get('null_pct', 0)):.2f}%")
+            if 'unique_count' in profile:
+                print(f"  Unique values: {profile['unique_count']}")
+            if 'min' in profile:
+                print(f"  Min: {profile['min']}")
+            if 'max' in profile:
+                print(f"  Max: {profile['max']}")
+        else:
+            print(f"  Profile: {profile}")
+elif isinstance(profiles, list):
+    # If profiles is a list of profile objects/dicts
+    for i, profile in enumerate(profiles):
+        if isinstance(profile, dict):
+            col_name = profile.get('column', profile.get('col_name', f'Column {i}'))
+            print(f"\nColumn: {col_name}")
+            print(f"  Type: {profile.get('data_type', profile.get('type', 'unknown'))}")
+            print(f"  Null %: {profile.get('null_percentage', profile.get('null_pct', 0)):.2f}%")
+        else:
+            print(f"\nProfile {i}: {profile}")
+else:
+    print(f"Profiles type: {type(profiles)}")
+    print(f"Profiles content: {profiles}")
+
+# Also display summary stats if available
+if summary_stats:
+    print("\n\nSummary Statistics:")
+    print("=" * 60)
+    print(summary_stats)
 
 # COMMAND ----------
 
@@ -147,16 +179,19 @@ print(f"Generation complete! Generated {len(generated_checks)} rules.")
 # COMMAND ----------
 
 # Display the generated checks
+# Note: generate_dq_rules_ai_assisted() returns a list of dictionaries
 print("Generated DQ Rules:")
 print("-" * 50)
 
 for i, check in enumerate(generated_checks, 1):
     print(f"\nRule {i}:")
-    print(f"  Name: {check.name}")
-    print(f"  Criticality: {check.criticality}")
-    print(f"  Check Function: {check.check_func}")
-    if hasattr(check, 'arguments') and check.arguments:
-        print(f"  Arguments: {check.arguments}")
+    print(f"  Criticality: {check.get('criticality', 'N/A')}")
+    check_info = check.get('check', {})
+    print(f"  Check Function: {check_info.get('function', 'N/A')}")
+    if check_info.get('arguments'):
+        print(f"  Arguments: {check_info.get('arguments')}")
+    if check.get('filter'):
+        print(f"  Filter: {check.get('filter')}")
 
 # COMMAND ----------
 
@@ -167,23 +202,9 @@ for i, check in enumerate(generated_checks, 1):
 
 # COMMAND ----------
 
-from databricks.labs.dqx.engine import DQEngine
-
-# Initialize DQX engine
-dq_engine = DQEngine(ws)
-
-# Convert checks to serializable format for output
-validated_rules = []
-for check in generated_checks:
-    rule_dict = {
-        "name": check.name,
-        "criticality": check.criticality,
-        "check": {
-            "function": check.check_func,
-            "arguments": getattr(check, 'arguments', {})
-        }
-    }
-    validated_rules.append(rule_dict)
+# The generated_checks is already a list of dictionaries in the correct format
+# Just use them directly as validated_rules
+validated_rules = generated_checks
 
 print(f"\nPrepared {len(validated_rules)} rules for output")
 
@@ -195,8 +216,9 @@ print(f"\nPrepared {len(validated_rules)} rules for output")
 # COMMAND ----------
 
 # Generate a summary of the rules
-rule_names = [r["name"] for r in validated_rules]
-summary = f"Generated {len(validated_rules)} data quality rules for table '{table_name}': {', '.join(rule_names)}"
+# Extract function names from the check dictionaries
+rule_functions = [r.get("check", {}).get("function", "unknown") for r in validated_rules]
+summary = f"Generated {len(validated_rules)} data quality rules for table '{table_name}': {', '.join(rule_functions)}"
 
 # Prepare the output
 output = {
