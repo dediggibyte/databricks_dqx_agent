@@ -182,9 +182,10 @@ def trigger_dq_job(table_name, user_prompt):
 
     try:
         ws = get_workspace_client()
+        # Use job_parameters instead of notebook_params for jobs with parameters configured
         response = ws.jobs.run_now(
             job_id=int(DQ_GENERATION_JOB_ID),
-            notebook_params={
+            job_parameters={
                 "table_name": table_name,
                 "user_prompt": user_prompt
             }
