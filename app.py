@@ -214,14 +214,24 @@ User's original requirement: {prompt_escaped}
 Generated DQ Rules:
 {rules_escaped}
 
-Please provide:
-1. **Summary**: A concise summary of what these rules check (2-3 sentences)
-2. **Rule Analysis**: For each rule, explain what it checks, why it's important, and the criticality justification
-3. **Coverage Assessment**: How well do these rules cover the user's requirements?
-4. **Recommendations**: Any additional rules that might be beneficial
+Analyze each rule and provide a JSON response with this EXACT structure:
+{{
+    "summary": "2-3 sentence summary of what these rules check",
+    "rule_analysis": [
+        {{
+            "rule_function": "the check function name from the rule (e.g., is_not_null, is_in_range)",
+            "column": "the column name this rule applies to (from arguments.col_name or arguments.col_names)",
+            "explanation": "what this rule checks",
+            "importance": "why this rule is important for data quality",
+            "criticality": "error or warn"
+        }}
+    ],
+    "coverage_assessment": "how well do these rules cover the user's requirements",
+    "recommendations": ["additional rule suggestion 1", "additional rule suggestion 2"],
+    "overall_quality_score": 8
+}}
 
-Format your response as JSON with this structure:
-{{"summary": "...", "rule_analysis": [...], "coverage_assessment": "...", "recommendations": [...], "overall_quality_score": 1-10}}"""
+IMPORTANT: For each rule in rule_analysis, extract the rule_function from check.function and the column from check.arguments.col_name or check.arguments.col_names[0]. Return ONLY valid JSON."""
 
         # Escape for SQL string
         prompt_sql_escaped = analysis_prompt.replace("'", "''")

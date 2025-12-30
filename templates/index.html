@@ -6,21 +6,24 @@
     <title>Data Quality Rule Generator</title>
     <style>
         :root {
-            /* DQX-inspired color scheme */
-            --primary: #00A972;
-            --primary-dark: #008F5D;
-            --primary-light: #E6F7F1;
-            --accent: #FF3621;
-            --accent-light: #FFF0EE;
-            --text-primary: #1B1F23;
-            --text-secondary: #57606A;
-            --bg-primary: #F6F8FA;
-            --bg-secondary: #FFFFFF;
-            --border-color: #D0D7DE;
-            --success: #00A972;
+            /* DQX Dark Theme - matching docs.databrickslabs.github.io/dqx */
+            --primary: #FF3621;
+            --primary-dark: #E02D1B;
+            --primary-light: #FFF0EE;
+            --accent: #FF6B4A;
+            --accent-light: #FFF5F3;
+            --text-primary: #FFFFFF;
+            --text-secondary: #A0A0A0;
+            --text-dark: #1B1F23;
+            --bg-dark: #1B1F23;
+            --bg-darker: #141719;
+            --bg-card: #FFFFFF;
+            --border-color: #30363D;
+            --border-light: #E0E0E0;
+            --success: #3FB950;
             --warning: #D29922;
-            --error: #CF222E;
-            --info: #0969DA;
+            --error: #F85149;
+            --info: #58A6FF;
         }
 
         * {
@@ -31,7 +34,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background-color: var(--bg-primary);
+            background-color: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
         }
@@ -40,24 +43,25 @@
             width: 100%;
             max-width: 100%;
             margin: 0;
-            padding: 20px 40px;
+            padding: 0;
         }
 
         header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: var(--bg-darker);
             color: white;
             padding: 24px 40px;
-            margin: -20px -40px 20px -40px;
             display: flex;
             align-items: center;
             gap: 20px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .header-logo {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: bold;
-            background: rgba(255,255,255,0.2);
-            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            padding: 10px 18px;
             border-radius: 8px;
         }
 
@@ -65,18 +69,23 @@
             font-size: 26px;
             margin-bottom: 4px;
             font-weight: 600;
+            color: var(--text-primary);
         }
 
         header p {
-            opacity: 0.9;
+            color: var(--text-secondary);
             font-size: 14px;
         }
 
+        .main-content {
+            padding: 24px 40px;
+        }
+
         .card {
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             padding: 24px;
             margin-bottom: 20px;
         }
@@ -93,7 +102,7 @@
         .card h3 {
             font-size: 16px;
             margin: 20px 0 10px 0;
-            color: var(--text-primary);
+            color: var(--text-dark);
         }
 
         .form-group {
@@ -104,22 +113,23 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
-            color: var(--text-secondary);
+            color: var(--text-dark);
         }
 
         select, textarea, input[type="text"] {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border-light);
             border-radius: 6px;
             font-size: 14px;
-            background: var(--bg-secondary);
+            background: var(--bg-card);
+            color: var(--text-dark);
         }
 
         select:focus, textarea:focus, input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(0, 169, 114, 0.15);
+            box-shadow: 0 0 0 3px rgba(255, 54, 33, 0.15);
         }
 
         textarea {
@@ -212,8 +222,9 @@
         .info-box {
             background: var(--primary-light);
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: center;
+            border: 1px solid rgba(255, 54, 33, 0.1);
         }
 
         .info-box .value {
@@ -224,7 +235,8 @@
 
         .info-box .label {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: var(--text-dark);
+            opacity: 0.7;
         }
 
         .info-box.wide {
@@ -297,8 +309,8 @@
 
         .column-info {
             font-size: 13px;
-            color: #666;
-            background: #f1f3f4;
+            color: var(--text-dark);
+            background: #F5F5F5;
             padding: 10px;
             border-radius: 4px;
             margin-top: 10px;
@@ -310,9 +322,11 @@
 
         footer {
             text-align: center;
-            padding: 20px;
-            color: #666;
+            padding: 24px 40px;
+            color: var(--text-secondary);
             font-size: 12px;
+            background: var(--bg-darker);
+            border-top: 1px solid var(--border-color);
         }
 
         footer a {
@@ -376,6 +390,14 @@
             font-weight: 500;
         }
 
+        .metadata-box label {
+            color: var(--text-dark);
+        }
+
+        .metadata-box .value {
+            color: var(--text-dark);
+        }
+
         .metadata-box .value.large {
             font-size: 24px;
             color: var(--primary);
@@ -405,7 +427,7 @@
 
         .rule-header .rule-title {
             font-weight: 600;
-            color: #333;
+            color: var(--text-dark);
         }
 
         .rule-header .rule-badge {
@@ -484,8 +506,8 @@
 
         /* Summary Section */
         .summary-box {
-            background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg-primary) 100%);
-            border: 1px solid #A7E3CC;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #FFF8F7 100%);
+            border: 1px solid rgba(255, 54, 33, 0.2);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
@@ -498,7 +520,7 @@
         }
 
         .summary-box p {
-            color: #333;
+            color: var(--text-dark);
             font-size: 14px;
             line-height: 1.6;
         }
@@ -520,6 +542,7 @@
             align-items: center;
             cursor: pointer;
             padding: 10px 0;
+            color: var(--text-dark);
         }
 
         .collapsible-header:hover {
@@ -651,8 +674,8 @@
         }
 
         .ai-analysis-container {
-            background: #f8f9fa;
-            border: 1px solid #e8eaed;
+            background: #FAFAFA;
+            border: 1px solid var(--border-light);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
@@ -664,7 +687,8 @@
         }
 
         .ai-description, .save-description {
-            color: #666;
+            color: var(--text-dark);
+            opacity: 0.7;
             font-size: 14px;
             margin-bottom: 15px;
         }
@@ -675,29 +699,29 @@
 
         .analysis-box {
             background: white;
-            border: 1px solid #e8eaed;
+            border: 1px solid var(--border-light);
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
         }
 
         .analysis-box h4 {
-            color: #333;
+            color: var(--text-dark);
             font-size: 14px;
             margin-bottom: 10px;
-            border-bottom: 1px solid #e8eaed;
+            border-bottom: 1px solid var(--border-light);
             padding-bottom: 8px;
         }
 
         .analysis-box p {
-            color: #555;
+            color: var(--text-dark);
             font-size: 14px;
             line-height: 1.6;
         }
 
         .summary-analysis {
-            background: linear-gradient(135deg, var(--primary-light) 0%, var(--bg-primary) 100%);
-            border: 1px solid #A7E3CC;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #FFF8F7 100%);
+            border: 1px solid rgba(255, 54, 33, 0.2);
         }
 
         .score-box {
@@ -724,10 +748,11 @@
         }
 
         .rule-analysis-item {
-            background: #f8f9fa;
+            background: #F8F8F8;
             border-radius: 6px;
             padding: 12px;
             margin-bottom: 10px;
+            border: 1px solid var(--border-light);
         }
 
         .rule-analysis-item .rule-name {
@@ -738,20 +763,47 @@
 
         .rule-analysis-item .rule-column {
             font-size: 12px;
-            color: #666;
+            color: var(--text-dark);
+            opacity: 0.7;
             margin-bottom: 8px;
         }
 
         .rule-analysis-item .rule-explanation {
             font-size: 13px;
-            color: #333;
+            color: var(--text-dark);
             margin-bottom: 5px;
         }
 
         .rule-analysis-item .rule-importance {
             font-size: 12px;
-            color: #555;
+            color: var(--text-dark);
+            opacity: 0.8;
             font-style: italic;
+        }
+
+        .rule-analysis-item .rule-criticality {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .criticality-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .criticality-badge.error {
+            background: var(--accent-light);
+            color: var(--error);
+        }
+
+        .criticality-badge.warn, .criticality-badge.warning {
+            background: #FEF3CD;
+            color: var(--warning);
         }
 
         .recommendations-box ul {
@@ -760,14 +812,14 @@
         }
 
         .recommendations-box li {
-            color: #555;
+            color: var(--text-dark);
             font-size: 14px;
             margin-bottom: 8px;
         }
 
         .save-section {
-            background: #f8f9fa;
-            border: 1px solid #e8eaed;
+            background: #FAFAFA;
+            border: 1px solid var(--border-light);
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 20px;
@@ -791,8 +843,8 @@
             display: flex;
             align-items: flex-start;
             gap: 15px;
-            background: var(--primary-light);
-            border: 1px solid #A7E3CC;
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
             border-radius: 8px;
             padding: 20px;
         }
@@ -827,7 +879,7 @@
         }
 
         .save-detail-item span {
-            color: #333;
+            color: var(--text-dark);
             font-family: monospace;
         }
 
@@ -875,11 +927,12 @@
 
         /* AI Analysis Formatted Content */
         .analysis-formatted {
-            background: var(--bg-primary);
+            background: #F8F8F8;
             border-radius: 8px;
             padding: 16px;
             font-size: 14px;
             line-height: 1.7;
+            color: var(--text-dark);
         }
 
         .analysis-formatted h4 {
@@ -896,6 +949,7 @@
         .analysis-formatted ul, .analysis-formatted ol {
             margin: 8px 0;
             padding-left: 24px;
+            color: var(--text-dark);
         }
 
         .analysis-formatted li {
@@ -903,15 +957,16 @@
         }
 
         .analysis-formatted strong {
-            color: var(--text-primary);
+            color: var(--text-dark);
         }
 
         .analysis-formatted code {
-            background: var(--border-color);
+            background: var(--border-light);
             padding: 2px 6px;
             border-radius: 4px;
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 13px;
+            color: var(--primary);
         }
 
         .analysis-formatted p {
@@ -922,7 +977,8 @@
             border-left: 3px solid var(--primary);
             padding-left: 12px;
             margin: 12px 0;
-            color: var(--text-secondary);
+            color: var(--text-dark);
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -936,6 +992,7 @@
             </div>
         </header>
 
+        <div class="main-content">
         <!-- Step 1: Table Selection -->
         <div class="card">
             <h2>Step 1: Select a Table</h2>
@@ -1191,6 +1248,7 @@
                 </div>
             </div>
         </div>
+        </div><!-- end main-content -->
 
         <footer>
             Powered by <a href="https://databrickslabs.github.io/dqx/" target="_blank">Databricks DQX</a> | Data Quality at Scale
@@ -1807,17 +1865,65 @@
             const score = analysis.overall_quality_score;
             document.getElementById('quality-score').textContent = score ? `${score}/10` : '-';
 
-            // Display rule analysis
+            // Display rule analysis - merge AI analysis with actual rules data
             const ruleAnalysisList = document.getElementById('rule-analysis-list');
+
+            // Get the actual rules from the editor to cross-reference
+            let actualRules = [];
+            try {
+                actualRules = JSON.parse(document.getElementById('rules-json-editor').value);
+            } catch (e) {}
+
             if (analysis.rule_analysis && analysis.rule_analysis.length > 0) {
-                ruleAnalysisList.innerHTML = analysis.rule_analysis.map(rule => `
+                ruleAnalysisList.innerHTML = analysis.rule_analysis.map((rule, index) => {
+                    // Try to get rule details from AI response
+                    let ruleName = rule.rule_function || rule.function || rule.name || rule.check || '';
+                    let ruleColumn = rule.column || rule.col_name || rule.field || '';
+                    let ruleCriticality = rule.criticality_justification || rule.criticality || '';
+
+                    // If AI didn't provide rule_function or column, try to get from actual rules
+                    if ((!ruleName || ruleName === '-') && actualRules[index]) {
+                        const actualRule = actualRules[index];
+                        ruleName = actualRule.check?.function || actualRule.name || '';
+                        ruleCriticality = ruleCriticality || actualRule.criticality || '';
+                    }
+
+                    if ((!ruleColumn || ruleColumn === '-') && actualRules[index]) {
+                        const actualRule = actualRules[index];
+                        const args = actualRule.check?.arguments || {};
+                        ruleColumn = args.col_name || (args.col_names ? args.col_names[0] : '') || '';
+                    }
+
+                    const ruleExplanation = rule.explanation || rule.description || rule.what_it_checks || '-';
+                    const ruleImportance = rule.importance || rule.why_important || rule.reason || '-';
+
+                    // Format rule name nicely
+                    const displayRuleName = ruleName ? ruleName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Rule ' + (index + 1);
+
+                    return `
                     <div class="rule-analysis-item">
-                        <div class="rule-name">${escapeHtml(rule.rule_function || '-')}</div>
-                        <div class="rule-column">Column: <code>${escapeHtml(rule.column || '-')}</code></div>
-                        <div class="rule-explanation">${formatMarkdownToHtml(rule.explanation || '-')}</div>
-                        <div class="rule-importance"><strong>Importance:</strong> ${escapeHtml(rule.importance || '-')}</div>
+                        <div class="rule-name">${escapeHtml(String(displayRuleName))}</div>
+                        ${ruleColumn ? `<div class="rule-column">Column: <code>${escapeHtml(String(ruleColumn))}</code></div>` : ''}
+                        <div class="rule-explanation">${formatMarkdownToHtml(String(ruleExplanation))}</div>
+                        <div class="rule-importance"><strong>Importance:</strong> ${formatMarkdownToHtml(String(ruleImportance))}</div>
+                        ${ruleCriticality ? `<div class="rule-criticality"><strong>Criticality:</strong> <span class="criticality-badge ${ruleCriticality.toLowerCase()}">${escapeHtml(String(ruleCriticality))}</span></div>` : ''}
                     </div>
-                `).join('');
+                `}).join('');
+            } else if (actualRules.length > 0) {
+                // If no AI analysis but we have rules, show basic info from rules
+                ruleAnalysisList.innerHTML = actualRules.map((rule, index) => {
+                    const ruleName = rule.check?.function || rule.name || 'Rule ' + (index + 1);
+                    const args = rule.check?.arguments || {};
+                    const ruleColumn = args.col_name || (args.col_names ? args.col_names.join(', ') : '');
+                    const displayRuleName = ruleName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+                    return `
+                    <div class="rule-analysis-item">
+                        <div class="rule-name">${escapeHtml(displayRuleName)}</div>
+                        ${ruleColumn ? `<div class="rule-column">Column: <code>${escapeHtml(ruleColumn)}</code></div>` : ''}
+                        <div class="rule-criticality"><strong>Criticality:</strong> <span class="criticality-badge ${(rule.criticality || '').toLowerCase()}">${escapeHtml(rule.criticality || 'N/A')}</span></div>
+                    </div>
+                `}).join('');
             } else {
                 ruleAnalysisList.innerHTML = '<p style="color: var(--text-secondary);">No detailed rule analysis available.</p>';
             }
@@ -1826,12 +1932,21 @@
             const coverageText = analysis.coverage_assessment || '-';
             document.getElementById('coverage-assessment').innerHTML = `<div class="analysis-formatted">${formatMarkdownToHtml(coverageText)}</div>`;
 
-            // Display recommendations
+            // Display recommendations - handle both string and object formats
             const recommendationsList = document.getElementById('recommendations-list');
             if (analysis.recommendations && analysis.recommendations.length > 0) {
-                recommendationsList.innerHTML = analysis.recommendations.map(rec =>
-                    `<li>${formatMarkdownToHtml(rec)}</li>`
-                ).join('');
+                recommendationsList.innerHTML = analysis.recommendations.map(rec => {
+                    // Handle different formats: string, object with text/recommendation/description
+                    let recText = '';
+                    if (typeof rec === 'string') {
+                        recText = rec;
+                    } else if (typeof rec === 'object' && rec !== null) {
+                        recText = rec.text || rec.recommendation || rec.description || rec.message || rec.content || JSON.stringify(rec);
+                    } else {
+                        recText = String(rec);
+                    }
+                    return `<li>${formatMarkdownToHtml(recText)}</li>`;
+                }).join('');
             } else {
                 recommendationsList.innerHTML = '<li>No additional recommendations.</li>';
             }
