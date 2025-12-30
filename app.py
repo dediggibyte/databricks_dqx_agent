@@ -188,78 +188,63 @@ def get_table_sample(full_table_name, limit=100):
 def analyze_dq_rules_with_agent(rules, table_name, user_prompt):
     """
     AgentBricks tool that analyzes DQ rules and provides summary with reasoning.
-    Uses Databricks Model Serving endpoint via OpenAI-compatible API.
+    Uses ai_query() via SQL Statement Execution API.
     """
     try:
-        from openai import OpenAI
-        from databricks.sdk.core import Config
+        import re
 
-        # Get user's OAuth token from Databricks Apps
-        user_token = request.headers.get('x-forwarded-access-token')
+        ws = get_workspace_client()
+        warehouse_id = get_sql_warehouse_id()
 
-        if not user_token:
-            raise Exception("No OAuth token available. User must be authenticated via Databricks Apps.")
-
-        # Get Databricks host from SDK config (auto-configured in Databricks Apps)
-        cfg = Config()
-        databricks_host = cfg.host.rstrip("/")
-
-        client = OpenAI(
-            api_key=user_token,
-            base_url=f"{databricks_host}/serving-endpoints"
-        )
+        if not warehouse_id:
+            raise Exception("No SQL warehouse available")
 
         # Build the analysis prompt
         rules_json = json.dumps(rules, indent=2)
-        analysis_prompt = f"""You are a Data Quality expert. Analyze the following DQ rules generated for table '{table_name}'.
 
-User's original requirement: {user_prompt}
+        # Escape single quotes for SQL
+        rules_escaped = rules_json.replace("'", "''").replace("\\", "\\\\")
+        table_escaped = table_name.replace("'", "''")
+        prompt_escaped = user_prompt.replace("'", "''")
+
+        analysis_prompt = f"""You are a Data Quality expert. Analyze the following DQ rules generated for table '{table_escaped}'.
+
+User's original requirement: {prompt_escaped}
 
 Generated DQ Rules:
-{rules_json}
+{rules_escaped}
 
 Please provide:
 1. **Summary**: A concise summary of what these rules check (2-3 sentences)
-2. **Rule Analysis**: For each rule, explain:
-   - What it checks
-   - Why it's important for data quality
-   - The criticality level and its justification
+2. **Rule Analysis**: For each rule, explain what it checks, why it's important, and the criticality justification
 3. **Coverage Assessment**: How well do these rules cover the user's requirements?
 4. **Recommendations**: Any additional rules that might be beneficial
 
-Format your response as JSON with the following structure:
-{{
-    "summary": "...",
-    "rule_analysis": [
-        {{
-            "rule_function": "...",
-            "column": "...",
-            "explanation": "...",
-            "importance": "...",
-            "criticality_justification": "..."
-        }}
-    ],
-    "coverage_assessment": "...",
-    "recommendations": ["...", "..."],
-    "overall_quality_score": 1-10
-}}"""
+Format your response as JSON with this structure:
+{{"summary": "...", "rule_analysis": [...], "coverage_assessment": "...", "recommendations": [...], "overall_quality_score": 1-10}}"""
 
-        # Call the model serving endpoint using OpenAI client
-        response = client.chat.completions.create(
-            model=MODEL_SERVING_ENDPOINT,
-            messages=[
-                {"role": "user", "content": analysis_prompt}
-            ],
-            max_tokens=2000
+        # Escape for SQL string
+        prompt_sql_escaped = analysis_prompt.replace("'", "''")
+
+        # Call ai_query via SQL Statement Execution
+        sql = f"""
+        SELECT ai_query(
+            '{MODEL_SERVING_ENDPOINT}',
+            '{prompt_sql_escaped}'
+        ) as analysis
+        """
+
+        response = ws.statement_execution.execute_statement(
+            warehouse_id=warehouse_id,
+            statement=sql,
+            wait_timeout="120s"
         )
 
-        # Parse the response
-        if response.choices and len(response.choices) > 0:
-            content = response.choices[0].message.content
+        if response.result and response.result.data_array and len(response.result.data_array) > 0:
+            content = response.result.data_array[0][0]
 
             # Try to extract JSON from the response
             try:
-                import re
                 json_match = re.search(r'\{[\s\S]*\}', content)
                 if json_match:
                     analysis = json.loads(json_match.group())
@@ -270,7 +255,7 @@ Format your response as JSON with the following structure:
             # If JSON parsing fails, return raw content
             return {"success": True, "analysis": {"summary": content, "raw_response": True}}
 
-        return {"success": False, "error": "No response from model"}
+        return {"success": False, "error": "No response from ai_query"}
 
     except Exception as e:
         print(f"Error analyzing rules with agent: {e}")
