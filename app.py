@@ -46,37 +46,87 @@ def get_workspace_client():
 # UNITY CATALOG API
 # ============================================================
 
+def get_sql_warehouse_id():
+    """Get a SQL warehouse ID for executing queries."""
+    try:
+        ws = get_workspace_client()
+        warehouses = list(ws.warehouses.list())
+        for wh in warehouses:
+            if wh.state and wh.state.value == "RUNNING":
+                return wh.id
+        # Return first warehouse if none running
+        if warehouses:
+            return warehouses[0].id
+    except Exception as e:
+        print(f"Error getting warehouse: {e}")
+    return None
+
+
+def execute_sql(statement):
+    """Execute SQL using Statement Execution API."""
+    ws = get_workspace_client()
+    warehouse_id = get_sql_warehouse_id()
+
+    if not warehouse_id:
+        raise Exception("No SQL warehouse available")
+
+    response = ws.statement_execution.execute_statement(
+        warehouse_id=warehouse_id,
+        statement=statement,
+        wait_timeout="30s"
+    )
+
+    if response.result and response.result.data_array:
+        return [row[0] for row in response.result.data_array]
+    return []
+
+
 def get_catalogs():
     """Get list of available catalogs."""
     try:
-        ws = get_workspace_client()
-        catalogs = list(ws.catalogs.list())
-        return [c.name for c in catalogs if c.name]
+        catalogs = execute_sql("SHOW CATALOGS")
+        return catalogs if catalogs else ["main"]
     except Exception as e:
         print(f"Error listing catalogs: {e}")
-        return ["main"]
+        # Fallback to SDK
+        try:
+            ws = get_workspace_client()
+            catalogs = list(ws.catalogs.list())
+            return [c.name for c in catalogs if c.name]
+        except:
+            return ["main"]
 
 
 def get_schemas(catalog):
     """Get list of schemas in a catalog."""
     try:
-        ws = get_workspace_client()
-        schemas = list(ws.schemas.list(catalog_name=catalog))
-        return [s.name for s in schemas if s.name]
+        schemas = execute_sql(f"SHOW SCHEMAS IN `{catalog}`")
+        return schemas if schemas else ["default"]
     except Exception as e:
         print(f"Error listing schemas: {e}")
-        return ["default"]
+        # Fallback to SDK
+        try:
+            ws = get_workspace_client()
+            schemas = list(ws.schemas.list(catalog_name=catalog))
+            return [s.name for s in schemas if s.name]
+        except:
+            return ["default"]
 
 
 def get_tables(catalog, schema):
     """Get list of tables in a schema."""
     try:
-        ws = get_workspace_client()
-        tables = list(ws.tables.list(catalog_name=catalog, schema_name=schema))
-        return [t.name for t in tables if t.name]
+        tables = execute_sql(f"SHOW TABLES IN `{catalog}`.`{schema}`")
+        return tables if tables else []
     except Exception as e:
         print(f"Error listing tables: {e}")
-        return []
+        # Fallback to SDK
+        try:
+            ws = get_workspace_client()
+            tables = list(ws.tables.list(catalog_name=catalog, schema_name=schema))
+            return [t.name for t in tables if t.name]
+        except:
+            return []
 
 
 def get_table_sample(full_table_name, limit=100):
@@ -103,22 +153,6 @@ def get_table_sample(full_table_name, limit=100):
     except Exception as e:
         print(f"Error getting sample data: {e}")
         return {"columns": [], "rows": [], "row_count": 0, "error": str(e)}
-
-
-def get_sql_warehouse_id():
-    """Get a SQL warehouse ID for executing queries."""
-    try:
-        ws = get_workspace_client()
-        warehouses = list(ws.warehouses.list())
-        for wh in warehouses:
-            if wh.state and wh.state.value == "RUNNING":
-                return wh.id
-        # Return first warehouse if none running
-        if warehouses:
-            return warehouses[0].id
-    except Exception as e:
-        print(f"Error getting warehouse: {e}")
-    return None
 
 
 # ============================================================
