@@ -206,13 +206,36 @@ def get_job_status(run_id):
 
         if state.life_cycle_state == RunLifeCycleState.TERMINATED:
             if state.result_state == RunResultState.SUCCESS:
-                output = ws.jobs.get_run_output(run_id=int(run_id))
                 result = None
-                if output.notebook_output and output.notebook_output.result:
+
+                # For multi-task jobs, get output from individual tasks
+                if run.tasks and len(run.tasks) > 0:
+                    # Find the notebook task and get its output
+                    for task in run.tasks:
+                        if task.run_id:
+                            try:
+                                task_output = ws.jobs.get_run_output(run_id=task.run_id)
+                                if task_output.notebook_output and task_output.notebook_output.result:
+                                    try:
+                                        result = json.loads(task_output.notebook_output.result)
+                                    except:
+                                        result = task_output.notebook_output.result
+                                    break  # Found output, stop looking
+                            except Exception as task_err:
+                                print(f"Error getting task output: {task_err}")
+                                continue
+                else:
+                    # Single task job - get output directly
                     try:
-                        result = json.loads(output.notebook_output.result)
-                    except:
-                        result = output.notebook_output.result
+                        output = ws.jobs.get_run_output(run_id=int(run_id))
+                        if output.notebook_output and output.notebook_output.result:
+                            try:
+                                result = json.loads(output.notebook_output.result)
+                            except:
+                                result = output.notebook_output.result
+                    except Exception as e:
+                        print(f"Error getting run output: {e}")
+
                 return {"status": "completed", "result": result}
             else:
                 return {"status": "failed", "message": state.state_message}
