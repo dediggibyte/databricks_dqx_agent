@@ -35,7 +35,7 @@ from databricks.labs.dqx.config import InputConfig, LLMModelConfig
 ws = WorkspaceClient()
 
 # Load data - use cache to avoid multiple scans
-df = spark.table(table_name).cache()
+df = spark.table(table_name)
 row_count = df.count()
 columns = df.columns
 column_count = len(columns)
