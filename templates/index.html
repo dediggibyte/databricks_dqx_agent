@@ -493,6 +493,75 @@
         .chevron.rotated {
             transform: rotate(180deg);
         }
+
+        /* JSON Editor Styles */
+        .json-editor-container {
+            margin-top: 15px;
+        }
+
+        .json-editor-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            border: 1px solid #e8eaed;
+            border-bottom: none;
+        }
+
+        .rule-count {
+            background: #1a73e8;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .json-editor {
+            width: 100%;
+            min-height: 400px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 15px;
+            border: 1px solid #e8eaed;
+            border-radius: 0 0 8px 8px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            resize: vertical;
+            tab-size: 2;
+        }
+
+        .json-editor:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        .json-validation-message {
+            margin-top: 10px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .json-validation-message.valid {
+            display: block;
+            background: #e6f4ea;
+            color: #137333;
+            border: 1px solid #ceead6;
+        }
+
+        .json-validation-message.invalid {
+            display: block;
+            background: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #f5c6cb;
+        }
     </style>
 </head>
 <body>
@@ -615,16 +684,21 @@
                 <p id="result-summary">-</p>
             </div>
 
-            <!-- Editable Rules Section -->
+            <!-- Editable Rules Section (JSON Editor) -->
             <h3 class="collapsible-header" onclick="toggleSection('rules-section')">
-                <span>Data Quality Rules</span>
+                <span>Data Quality Rules (Editable JSON)</span>
                 <span class="chevron" id="rules-chevron">&#9660;</span>
             </h3>
             <div class="collapsible-content expanded" id="rules-section">
-                <div class="rules-container" id="rules-container">
-                    <!-- Rules will be inserted here -->
+                <div class="json-editor-container">
+                    <div class="json-editor-toolbar">
+                        <span class="rule-count" id="rule-count-badge">0 rules</span>
+                        <button class="btn btn-sm btn-secondary" onclick="formatJson()">Format JSON</button>
+                        <button class="btn btn-sm btn-secondary" onclick="validateJson()">Validate</button>
+                    </div>
+                    <textarea id="rules-json-editor" class="json-editor" spellcheck="false" onchange="onRulesEdited()"></textarea>
+                    <div id="json-validation-message" class="json-validation-message"></div>
                 </div>
-                <button class="add-rule-btn" onclick="addNewRule()">+ Add New Rule</button>
             </div>
 
             <!-- Column Profiles Section (Collapsible) -->
@@ -907,87 +981,87 @@
                 document.getElementById('result-summary').textContent = data.summary;
             }
 
-            // Render editable rules
-            renderRules(data.rules || []);
+            // Render rules in JSON editor
+            renderRulesJson(data.rules || []);
 
             // Render column profiles
             renderProfiles(data.column_profiles || []);
         }
 
-        function renderRules(rules) {
-            const container = document.getElementById('rules-container');
-            container.innerHTML = '';
+        function renderRulesJson(rules) {
+            const editor = document.getElementById('rules-json-editor');
+            const badge = document.getElementById('rule-count-badge');
 
-            rules.forEach((rule, index) => {
-                const ruleHtml = createRuleCard(rule, index);
-                container.innerHTML += ruleHtml;
-            });
+            editor.value = JSON.stringify(rules, null, 2);
+            badge.textContent = `${rules.length} rules`;
         }
 
-        function createRuleCard(rule, index) {
-            const check = rule.check || {};
-            const args = check.arguments || {};
-            const criticality = rule.criticality || 'error';
-            const filter = rule.filter || '';
-
-            // Build arguments display
-            let argsHtml = '';
-            for (const [key, value] of Object.entries(args)) {
-                const displayValue = Array.isArray(value) ? value.join(', ') : value;
-                argsHtml += `
-                    <div class="rule-field">
-                        <label>${key}</label>
-                        <input type="text" value="${escapeHtml(String(displayValue))}"
-                               data-rule="${index}" data-arg="${key}" onchange="updateRuleArg(this)">
-                    </div>
-                `;
+        function formatJson() {
+            const editor = document.getElementById('rules-json-editor');
+            try {
+                const parsed = JSON.parse(editor.value);
+                editor.value = JSON.stringify(parsed, null, 2);
+                showValidationMessage('JSON formatted successfully', true);
+            } catch (e) {
+                showValidationMessage(`Invalid JSON: ${e.message}`, false);
             }
+        }
 
-            return `
-                <div class="rule-card" id="rule-${index}">
-                    <div class="rule-header">
-                        <span class="rule-title">Rule ${index + 1}: ${check.function || 'Unknown'}</span>
-                        <span class="rule-badge ${criticality}">${criticality}</span>
-                    </div>
-                    <div class="rule-body">
-                        <div class="rule-row">
-                            <div class="rule-field">
-                                <label>Function</label>
-                                <select data-rule="${index}" data-field="function" onchange="updateRuleField(this)">
-                                    <option value="is_not_null" ${check.function === 'is_not_null' ? 'selected' : ''}>is_not_null</option>
-                                    <option value="is_not_null_and_not_empty" ${check.function === 'is_not_null_and_not_empty' ? 'selected' : ''}>is_not_null_and_not_empty</option>
-                                    <option value="is_unique" ${check.function === 'is_unique' ? 'selected' : ''}>is_unique</option>
-                                    <option value="is_in_range" ${check.function === 'is_in_range' ? 'selected' : ''}>is_in_range</option>
-                                    <option value="is_in_list" ${check.function === 'is_in_list' ? 'selected' : ''}>is_in_list</option>
-                                    <option value="is_not_in_list" ${check.function === 'is_not_in_list' ? 'selected' : ''}>is_not_in_list</option>
-                                    <option value="is_not_in_future" ${check.function === 'is_not_in_future' ? 'selected' : ''}>is_not_in_future</option>
-                                    <option value="matches_regex" ${check.function === 'matches_regex' ? 'selected' : ''}>matches_regex</option>
-                                    <option value="sql_expression" ${check.function === 'sql_expression' ? 'selected' : ''}>sql_expression</option>
-                                    <option value="is_greater_than" ${check.function === 'is_greater_than' ? 'selected' : ''}>is_greater_than</option>
-                                    <option value="is_less_than" ${check.function === 'is_less_than' ? 'selected' : ''}>is_less_than</option>
-                                </select>
-                            </div>
-                            <div class="rule-field">
-                                <label>Criticality</label>
-                                <select data-rule="${index}" data-field="criticality" onchange="updateRuleField(this)">
-                                    <option value="error" ${criticality === 'error' ? 'selected' : ''}>Error</option>
-                                    <option value="warn" ${criticality === 'warn' ? 'selected' : ''}>Warning</option>
-                                </select>
-                            </div>
-                        </div>
-                        ${argsHtml}
-                        <div class="rule-field">
-                            <label>Filter (optional)</label>
-                            <input type="text" value="${escapeHtml(filter)}"
-                                   data-rule="${index}" data-field="filter" onchange="updateRuleField(this)"
-                                   placeholder="e.g., status = 'active'">
-                        </div>
-                    </div>
-                    <div class="rule-actions">
-                        <button class="btn btn-danger btn-sm" onclick="deleteRule(${index})">Delete Rule</button>
-                    </div>
-                </div>
-            `;
+        function validateJson() {
+            const editor = document.getElementById('rules-json-editor');
+            try {
+                const parsed = JSON.parse(editor.value);
+                if (!Array.isArray(parsed)) {
+                    showValidationMessage('Rules must be an array', false);
+                    return false;
+                }
+
+                // Validate each rule structure
+                for (let i = 0; i < parsed.length; i++) {
+                    const rule = parsed[i];
+                    if (!rule.check || !rule.check.function) {
+                        showValidationMessage(`Rule ${i + 1}: Missing 'check.function' field`, false);
+                        return false;
+                    }
+                    if (!rule.criticality) {
+                        showValidationMessage(`Rule ${i + 1}: Missing 'criticality' field`, false);
+                        return false;
+                    }
+                }
+
+                showValidationMessage(`Valid JSON with ${parsed.length} rules`, true);
+                document.getElementById('rule-count-badge').textContent = `${parsed.length} rules`;
+                return true;
+            } catch (e) {
+                showValidationMessage(`Invalid JSON: ${e.message}`, false);
+                return false;
+            }
+        }
+
+        function showValidationMessage(message, isValid) {
+            const msgDiv = document.getElementById('json-validation-message');
+            msgDiv.textContent = message;
+            msgDiv.className = 'json-validation-message ' + (isValid ? 'valid' : 'invalid');
+
+            // Auto-hide success message after 3 seconds
+            if (isValid) {
+                setTimeout(() => {
+                    msgDiv.className = 'json-validation-message';
+                }, 3000);
+            }
+        }
+
+        function onRulesEdited() {
+            // Update currentRules when editor changes
+            try {
+                const parsed = JSON.parse(document.getElementById('rules-json-editor').value);
+                if (Array.isArray(parsed)) {
+                    currentRules.rules = parsed;
+                    document.getElementById('rule-count-badge').textContent = `${parsed.length} rules`;
+                }
+            } catch (e) {
+                // Invalid JSON, don't update
+            }
         }
 
         function renderProfiles(profiles) {
@@ -1040,60 +1114,6 @@
             return div.innerHTML;
         }
 
-        function updateRuleField(element) {
-            const ruleIndex = parseInt(element.dataset.rule);
-            const field = element.dataset.field;
-            const value = element.value;
-
-            if (field === 'function') {
-                currentRules.rules[ruleIndex].check.function = value;
-            } else if (field === 'criticality') {
-                currentRules.rules[ruleIndex].criticality = value;
-            } else if (field === 'filter') {
-                if (value) {
-                    currentRules.rules[ruleIndex].filter = value;
-                } else {
-                    delete currentRules.rules[ruleIndex].filter;
-                }
-            }
-        }
-
-        function updateRuleArg(element) {
-            const ruleIndex = parseInt(element.dataset.rule);
-            const argName = element.dataset.arg;
-            let value = element.value;
-
-            // Try to parse as number or array
-            if (!isNaN(value) && value !== '') {
-                value = parseFloat(value);
-            } else if (value.includes(',')) {
-                value = value.split(',').map(v => v.trim());
-            }
-
-            currentRules.rules[ruleIndex].check.arguments[argName] = value;
-        }
-
-        function deleteRule(index) {
-            if (confirm('Are you sure you want to delete this rule?')) {
-                currentRules.rules.splice(index, 1);
-                renderRules(currentRules.rules);
-            }
-        }
-
-        function addNewRule() {
-            const newRule = {
-                criticality: 'error',
-                check: {
-                    function: 'is_not_null',
-                    arguments: {
-                        column: ''
-                    }
-                }
-            };
-            currentRules.rules.push(newRule);
-            renderRules(currentRules.rules);
-        }
-
         function toggleSection(sectionId) {
             const section = document.getElementById(sectionId);
             const chevron = document.getElementById(sectionId.replace('-section', '-chevron'));
@@ -1110,18 +1130,27 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `dq_rules_${table}_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `dq_rules_full_${table}_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
         function downloadEditedRules() {
-            if (!currentRules) return;
+            // Get rules from the JSON editor
+            const editor = document.getElementById('rules-json-editor');
+            let rules;
+
+            try {
+                rules = JSON.parse(editor.value);
+            } catch (e) {
+                showValidationMessage('Cannot download: Invalid JSON in editor', false);
+                return;
+            }
 
             // Create a clean export with just the rules
             const exportData = {
-                table_name: currentRules.table_name,
-                rules: currentRules.rules,
+                table_name: currentRules ? currentRules.table_name : '',
+                rules: rules,
                 exported_at: new Date().toISOString()
             };
 
@@ -1130,7 +1159,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `dq_rules_edited_${table}_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `dq_rules_${table}_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
