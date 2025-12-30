@@ -5,14 +5,14 @@ Generate data quality rules using AI assistance with Databricks DQX library.
 ## Overview
 
 This solution provides:
-- **Step 1**: Databricks App with table dropdown and sample data preview
+- **Step 1**: Databricks App with table selection and sample data preview
 - **Step 2**: AI-powered DQ rule generation via Databricks notebook job
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                  Databricks App (Streamlit)                  │
+│                  Databricks App (Flask)                      │
 │  ┌─────────────────────┐    ┌─────────────────────────────┐ │
 │  │ Step 1:             │    │ Step 2:                     │ │
 │  │ - Catalog dropdown  │    │ - Prompt input              │ │
@@ -35,28 +35,41 @@ This solution provides:
 
 ## Components
 
-### 1. Databricks App (`app/app.py`)
-Streamlit-based web application:
-- **Cascading dropdowns**: Catalog → Schema → Table selection
-- **Sample data preview**: View table data with configurable row limit
-- **Column information**: Data types and null counts
+### 1. Databricks App (`app.py`)
+Flask-based web application served via Gunicorn:
+- **Cascading dropdowns**: Catalog → Schema → Table selection via Unity Catalog API
+- **Sample data preview**: View table data via Statement Execution API
 - **Prompt input**: Natural language DQ requirements
-- **Job trigger**: Submits prompt to notebook job
+- **Job trigger**: Submits parameters to notebook job
 - **Results display**: Shows generated rules with download option
 
 ### 2. DQ Rule Generation Notebook (`notebooks/generate_dq_rules.py`)
 Databricks notebook for serverless job execution:
 - Profiles input data using DQX Profiler
-- Generates DQ rules using AI (DSPy + Databricks LLM endpoints)
+- Generates DQ rules using AI (DQX + Databricks LLM endpoints)
 - Validates rules against DQX schema
 - Returns structured JSON output
+
+## Project Structure
+
+```
+databricks_dqx_agent/
+├── app.py                    # Flask application
+├── app.yaml                  # Databricks App config
+├── requirements.txt          # Python dependencies
+├── templates/
+│   └── index.html            # Web UI template
+├── notebooks/
+│   └── generate_dq_rules.py  # DQ generation notebook
+└── README.md
+```
 
 ## Setup
 
 ### Prerequisites
 - Databricks workspace with Unity Catalog enabled
-- Model serving endpoint (e.g., `databricks-meta-llama-3-1-70b-instruct`)
-- Python 3.10+
+- Model serving endpoint (e.g., `databricks-claude-sonnet-4-5`)
+- SQL Warehouse (for sample data preview)
 
 ### Step 1: Upload the Notebook
 
@@ -71,27 +84,22 @@ Databricks notebook for serverless job execution:
    - **Type**: Notebook
    - **Source**: Select the uploaded notebook
    - **Cluster**: Serverless
+   - **Parameters**: Add `table_name`, `user_prompt`, `timestamp` (as job trigger time)
 3. Save and note the **Job ID**
 
 ### Step 3: Deploy the Databricks App
 
-Option A - Using Databricks CLI:
-```bash
-databricks apps deploy dq-rule-generator --source-path /path/to/databricks_dqx_agent
-```
-
-Option B - Manual deployment:
 1. Go to **Compute → Apps → Create App**
-2. Upload the `app/` folder
-3. Set entry point to `app/app.py`
+2. Set **Source code path** to the root of this repository
+3. The app will use `app.yaml` configuration automatically
 
-### Step 4: Configure the App
+### Step 4: Configure Environment Variables
 
-In the app sidebar, enter your **DQ Generation Job ID**
-
-Or set environment variable:
-```bash
-export DQ_GENERATION_JOB_ID="your-job-id"
+Update `app.yaml` with your Job ID:
+```yaml
+env:
+  - name: DQ_GENERATION_JOB_ID
+    value: "your-job-id"
 ```
 
 ## Usage
@@ -120,48 +128,42 @@ export DQ_GENERATION_JOB_ID="your-job-id"
 Generated rules follow DQX-compatible format:
 
 ```json
-[
-  {
-    "name": "valid_email_check",
-    "criticality": "error",
-    "check": {
-      "function": "matches_regex",
-      "arguments": {
-        "col_name": "email",
-        "regex": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+{
+  "table_name": "catalog.schema.table",
+  "summary": "Generated 3 data quality rules...",
+  "rules": [
+    {
+      "name": "valid_email_check",
+      "criticality": "error",
+      "check": {
+        "function": "matches_regex",
+        "arguments": {
+          "col_name": "email",
+          "regex": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
+        }
       }
-    },
-    "filter": null
-  },
-  {
-    "name": "positive_amount",
-    "criticality": "warn",
-    "check": {
-      "function": "is_greater_than",
-      "arguments": {
-        "col_name": "amount",
-        "limit": 0
-      }
-    },
-    "filter": null
+    }
+  ],
+  "metadata": {
+    "row_count": 1000,
+    "column_count": 10,
+    "rules_generated": 3
   }
-]
+}
 ```
 
-## Project Structure
+## API Endpoints
 
-```
-databricks_dqx_agent/
-├── app/
-│   ├── __init__.py
-│   └── app.py              # Streamlit application
-├── notebooks/
-│   ├── __init__.py
-│   └── generate_dq_rules.py  # DQ generation notebook
-├── app.yaml                  # Databricks App config
-├── requirements.txt
-└── README.md
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Main UI |
+| `/api/catalogs` | GET | List Unity Catalog catalogs |
+| `/api/schemas/<catalog>` | GET | List schemas in a catalog |
+| `/api/tables/<catalog>/<schema>` | GET | List tables in a schema |
+| `/api/sample/<catalog>/<schema>/<table>` | GET | Get sample data |
+| `/api/generate` | POST | Trigger DQ generation job |
+| `/api/status/<run_id>` | GET | Get job run status |
+| `/health` | GET | Health check |
 
 ## References
 
