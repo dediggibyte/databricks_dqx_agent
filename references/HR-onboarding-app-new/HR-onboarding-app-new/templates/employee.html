@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.markdown-body ul,
+.markdown-body ol {
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+.markdown-body li {
+    margin-bottom: 0.25rem;
+}
+.markdown-body p {
+    margin-bottom: 0.5rem;
+}
+.markdown-body strong {
+    font-weight: 600;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+    font-size: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+</style>
+
+
+<div class="row mb-3">
+    <div class="col">
+        <h4>
+            <i class="bi bi-person-badge me-2"></i>
+            Welcome, <strong>{{ user }}</strong>
+        </h4>
+        <p class="text-muted">Complete your onboarding tasks and ask questions about HR policies.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- LEFT COLUMN: Onboarding Tasks -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check me-2"></i>
+                    Onboarding Tasks
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Check off tasks as you complete them. Your progress is saved automatically.
+                </p>
+
+                {% if tasks %}
+                    {% for t in tasks %}
+                    <div class="form-check mb-3 p-3 border rounded {% if t.is_completed %}bg-light{% endif %}">
+                        <input class="form-check-input" 
+                               type="checkbox"
+                               id="task-{{ t.id }}"
+                               {% if t.is_completed %}checked{% endif %}
+                               onchange="toggleTask({{ t.id }}, {{ 'true' if t.is_completed else 'false' }})">
+                        
+                        <label class="form-check-label {% if t.is_completed %}text-decoration-line-through text-muted{% endif %}" 
+                               for="task-{{ t.id }}">
+                            <strong>{{ t.task_name }}</strong>
+                            <span class="badge bg-secondary ms-2">{{ t.category }}</span>
+                        </label>
+                        
+                        {% if t.completed_by %}
+                        <div class="small text-muted mt-1">
+                            {% if t.is_completed %}
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                Completed by {{ t.completed_by }}
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger me-1"></i>
+                                Unchecked by {{ t.completed_by }}
+                            {% endif %}
+                            <span class="ms-2">{{ t.completed_at }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No onboarding tasks found. Contact HR if you believe this is an error.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Chat Assistant -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-dots me-2"></i>
+                    HR Assistant
+                </h5>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-muted small mb-3">
+                    Ask questions about HR policies, benefits, IT standards, and more.
+                </p>
+
+                <!-- Chat Messages -->
+                <div class="chat-box flex-grow-1 border rounded p-3 mb-3" id="chat-box">
+                    {% if messages %}
+                        {% for m in messages %}
+                        <div class="chat-msg {{ m.role }} mb-2 p-2 rounded">
+                            <strong>
+                                {% if m.role == 'user' %}
+                                    <i class="bi bi-person-fill me-1"></i>You
+                                {% else %}
+                                    <i class="bi bi-robot me-1"></i>Assistant
+                                {% endif %}
+                            </strong>
+                            <div class="mt-1 markdown-body js-md">{{ m.content | e }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4" id="chat-placeholder">
+                            <i class="bi bi-chat-square-text" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Start a conversation by asking a question below.</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Chat Input -->
+                <div class="input-group">
+                    <input type="text" 
+                           id="prompt" 
+                           class="form-control" 
+                           placeholder="Ex: What is the deductible for Plan A?"
+                           onkeypress="if(event.key === 'Enter') sendChat()">
+                    <button class="btn btn-success" onclick="sendChat()" id="send-btn">
+                        <i class="bi bi-send me-1"></i>
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+// Convert existing markdown messages on page load
+document.addEventListener("DOMContentLoaded", () => {
+    const mdBlocks = document.querySelectorAll(".js-md");
+    mdBlocks.forEach(el => {
+        const raw = el.textContent;
+        const html = marked.parse(raw);
+        el.innerHTML = html;
+    });
+});
+// Toggle task completion
+async function toggleTask(id, currentStatus) {
+    try {
+        const response = await fetch("/toggle-task", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task_id: id, current_status: currentStatus })
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert("Error: " + (error.error || "Failed to update task"));
+        }
+    } catch (err) {
+        alert("Network error: " + err.message);
+    }
+}
+
+// Send chat message
+async function sendChat() {
+    const input = document.getElementById("prompt");
+    const prompt = input.value.trim();
+    
+    if (!prompt) return;
+
+    // Remove placeholder if exists
+    const placeholder = document.getElementById("chat-placeholder");
+    if (placeholder) placeholder.remove();
+
+    // Add user message to UI
+    appendMessage("user", prompt);
+    input.value = "";
+    
+    // Disable send button
+    const sendBtn = document.getElementById("send-btn");
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Thinking...';
+
+    try {
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt })
+        });
+
+        const data = await response.json();
+        appendMessage("assistant", data.answer);
+
+    } catch (err) {
+        appendMessage("assistant", "❌ Network error while contacting assistant.");
+    } finally {
+        // Re-enable send button
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send me-1"></i>Send';
+    }
+}
+
+// Append message to chat box
+function appendMessage(role, text) {
+    const box = document.getElementById("chat-box");
+    
+    const div = document.createElement("div");
+    div.className = `chat-msg ${role} mb-2 p-2 rounded`;
+    
+    const icon = role === "user" 
+        ? '<i class="bi bi-person-fill me-1"></i>You' 
+        : '<i class="bi bi-robot me-1"></i>Assistant';
+
+    // Convert markdown -> html
+    const htmlBody = marked.parse(text);
+
+    div.innerHTML = `
+        <strong>${icon}</strong>
+        <div class="mt-1 markdown-body">
+            ${htmlBody}
+        </div>
+    `;
+    
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Quality Rule Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #1a73e8;
+            border-bottom: 2px solid #e8f0fe;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        select:focus, textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .dropdown-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #1a73e8;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1557b0;
+        }
+
+        .btn-primary:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #f1f3f4;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e8eaed;
+        }
+
+        .table-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-box {
+            background: #e8f0fe;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .info-box .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a73e8;
+        }
+
+        .info-box .label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .status-bar {
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .status-bar.info {
+            background: #e8f0fe;
+            color: #1a73e8;
+            display: block;
+        }
+
+        .status-bar.success {
+            background: #e6f4ea;
+            color: #137333;
+            display: block;
+        }
+
+        .status-bar.error {
+            background: #fce8e6;
+            color: #c5221f;
+            display: block;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar .fill {
+            height: 100%;
+            background: #1a73e8;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .rules-output {
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .rules-output pre {
+            margin: 0;
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+        }
+
+        .column-info {
+            font-size: 13px;
+            color: #666;
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        footer a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Data Quality Rule Generator</h1>
+            <p>Generate data quality rules using AI assistance</p>
+        </header>
+
+        <!-- Step 1: Table Selection -->
+        <div class="card">
+            <h2>Step 1: Select a Table</h2>
+            <div class="dropdown-row">
+                <div class="form-group">
+                    <label for="catalog">Catalog</label>
+                    <select id="catalog" onchange="loadSchemas()">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="schema">Schema</label>
+                    <select id="schema" onchange="loadTables()" disabled>
+                        <option value="">Select catalog first</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="table">Table</label>
+                    <select id="table" onchange="loadSampleData()" disabled>
+                        <option value="">Select schema first</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sample Data Preview -->
+        <div id="sample-section" class="card hidden">
+            <h2>Sample Data Preview</h2>
+            <div class="table-info">
+                <div class="info-box">
+                    <div class="value" id="col-count">0</div>
+                    <div class="label">Columns</div>
+                </div>
+                <div class="info-box">
+                    <div class="value" id="row-count">0</div>
+                    <div class="label">Rows (sample)</div>
+                </div>
+                <div class="info-box">
+                    <div class="value" id="table-name">-</div>
+                    <div class="label">Table</div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="data-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="column-info" id="column-info"></div>
+        </div>
+
+        <!-- Step 2: Generate Rules -->
+        <div id="generate-section" class="card hidden">
+            <h2>Step 2: Generate Data Quality Rules</h2>
+            <div class="form-group">
+                <label for="prompt">Describe the data quality rules you need</label>
+                <textarea id="prompt" placeholder="Examples:
+- Ensure email column contains valid email addresses
+- Check that amounts are positive numbers
+- Verify dates are not in the future
+- Make sure customer_id is not null and unique
+- Validate phone numbers match expected format"></textarea>
+            </div>
+
+            <div id="status-bar" class="status-bar"></div>
+
+            <button id="generate-btn" class="btn btn-primary" onclick="generateRules()" disabled>
+                Generate DQ Rules
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="results-section" class="card hidden">
+            <h2>Generated DQ Rules</h2>
+            <div id="rules-summary"></div>
+            <div class="rules-output">
+                <pre id="rules-json"></pre>
+            </div>
+            <br>
+            <button class="btn btn-secondary" onclick="downloadRules()">Download Rules JSON</button>
+            <button class="btn btn-secondary" onclick="resetForm()">Generate New Rules</button>
+        </div>
+
+        <footer>
+            Powered by <a href="https://databrickslabs.github.io/dqx/" target="_blank">Databricks DQX</a> | Data Quality at Scale
+        </footer>
+    </div>
+
+    <script>
+        let currentSampleData = null;
+        let currentRules = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadCatalogs);
+
+        async function loadCatalogs() {
+            const select = document.getElementById('catalog');
+            try {
+                const response = await fetch('/api/catalogs');
+                const catalogs = await response.json();
+                select.innerHTML = '<option value="">Select a catalog</option>' +
+                    catalogs.map(c => `<option value="${c}">${c}</option>`).join('');
+            } catch (e) {
+                select.innerHTML = '<option value="">Error loading catalogs</option>';
+            }
+        }
+
+        async function loadSchemas() {
+            const catalog = document.getElementById('catalog').value;
+            const schemaSelect = document.getElementById('schema');
+            const tableSelect = document.getElementById('table');
+
+            if (!catalog) {
+                schemaSelect.disabled = true;
+                schemaSelect.innerHTML = '<option value="">Select catalog first</option>';
+                tableSelect.disabled = true;
+                tableSelect.innerHTML = '<option value="">Select schema first</option>';
+                return;
+            }
+
+            schemaSelect.innerHTML = '<option value="">Loading...</option>';
+            schemaSelect.disabled = true;
+
+            try {
+                const response = await fetch(`/api/schemas/${catalog}`);
+                const schemas = await response.json();
+                schemaSelect.innerHTML = '<option value="">Select a schema</option>' +
+                    schemas.map(s => `<option value="${s}">${s}</option>`).join('');
+                schemaSelect.disabled = false;
+            } catch (e) {
+                schemaSelect.innerHTML = '<option value="">Error loading schemas</option>';
+            }
+
+            tableSelect.disabled = true;
+            tableSelect.innerHTML = '<option value="">Select schema first</option>';
+            hideSampleSection();
+        }
+
+        async function loadTables() {
+            const catalog = document.getElementById('catalog').value;
+            const schema = document.getElementById('schema').value;
+            const tableSelect = document.getElementById('table');
+
+            if (!schema) {
+                tableSelect.disabled = true;
+                tableSelect.innerHTML = '<option value="">Select schema first</option>';
+                return;
+            }
+
+            tableSelect.innerHTML = '<option value="">Loading...</option>';
+            tableSelect.disabled = true;
+
+            try {
+                const response = await fetch(`/api/tables/${catalog}/${schema}`);
+                const tables = await response.json();
+                tableSelect.innerHTML = '<option value="">Select a table</option>' +
+                    tables.map(t => `<option value="${t}">${t}</option>`).join('');
+                tableSelect.disabled = false;
+            } catch (e) {
+                tableSelect.innerHTML = '<option value="">Error loading tables</option>';
+            }
+
+            hideSampleSection();
+        }
+
+        async function loadSampleData() {
+            const catalog = document.getElementById('catalog').value;
+            const schema = document.getElementById('schema').value;
+            const table = document.getElementById('table').value;
+
+            if (!table) {
+                hideSampleSection();
+                return;
+            }
+
+            const sampleSection = document.getElementById('sample-section');
+            sampleSection.classList.remove('hidden');
+
+            document.getElementById('col-count').textContent = '...';
+            document.getElementById('row-count').textContent = '...';
+            document.getElementById('table-name').textContent = table;
+
+            try {
+                const response = await fetch(`/api/sample/${catalog}/${schema}/${table}`);
+                const data = await response.json();
+                currentSampleData = data;
+
+                document.getElementById('col-count').textContent = data.columns.length;
+                document.getElementById('row-count').textContent = data.row_count;
+
+                // Render table
+                const thead = document.querySelector('#data-table thead');
+                const tbody = document.querySelector('#data-table tbody');
+
+                thead.innerHTML = '<tr>' + data.columns.map(c => `<th>${c}</th>`).join('') + '</tr>';
+                tbody.innerHTML = data.rows.map(row =>
+                    '<tr>' + data.columns.map(c => `<td>${row[c] !== null ? row[c] : '<em>null</em>'}</td>`).join('') + '</tr>'
+                ).join('');
+
+                // Show column info
+                document.getElementById('column-info').textContent =
+                    `Available columns: ${data.columns.join(', ')}`;
+
+                // Show generate section
+                document.getElementById('generate-section').classList.remove('hidden');
+                document.getElementById('generate-btn').disabled = false;
+
+            } catch (e) {
+                document.getElementById('col-count').textContent = 'Error';
+                document.getElementById('row-count').textContent = '-';
+            }
+        }
+
+        function hideSampleSection() {
+            document.getElementById('sample-section').classList.add('hidden');
+            document.getElementById('generate-section').classList.add('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+        }
+
+        async function generateRules() {
+            const catalog = document.getElementById('catalog').value;
+            const schema = document.getElementById('schema').value;
+            const table = document.getElementById('table').value;
+            const prompt = document.getElementById('prompt').value.trim();
+
+            if (!prompt) {
+                showStatus('Please enter your data quality requirements', 'error');
+                return;
+            }
+
+            const fullTableName = `${catalog}.${schema}.${table}`;
+            const btn = document.getElementById('generate-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Triggering job...';
+
+            showStatus('Triggering DQ rule generation job...', 'info');
+
+            try {
+                // Trigger job
+                const triggerResponse = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        table_name: fullTableName,
+                        user_prompt: prompt
+                    })
+                });
+
+                const triggerResult = await triggerResponse.json();
+
+                if (triggerResult.error) {
+                    showStatus(`Error: ${triggerResult.error}`, 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Generate DQ Rules';
+                    return;
+                }
+
+                const runId = triggerResult.run_id;
+                showStatus(`Job triggered! Run ID: ${runId}. Waiting for completion...`, 'info');
+
+                // Poll for completion
+                let attempts = 0;
+                const maxAttempts = 120; // 10 minutes
+
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+
+                    try {
+                        const statusResponse = await fetch(`/api/status/${runId}`);
+                        const status = await statusResponse.json();
+
+                        if (status.status === 'completed') {
+                            clearInterval(pollInterval);
+                            currentRules = status.result;
+                            showResults(status.result);
+                            showStatus('DQ rules generated successfully!', 'success');
+                            btn.disabled = false;
+                            btn.textContent = 'Generate DQ Rules';
+                        } else if (status.status === 'failed' || status.status === 'error') {
+                            clearInterval(pollInterval);
+                            showStatus(`Job failed: ${status.message}`, 'error');
+                            btn.disabled = false;
+                            btn.textContent = 'Generate DQ Rules';
+                        } else {
+                            btn.innerHTML = `<span class="loading"></span>Running... (${Math.round(attempts * 5 / 60)}m)`;
+                        }
+                    } catch (e) {
+                        // Continue polling on network errors
+                    }
+
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        showStatus(`Job is taking longer than expected. Check Jobs UI for Run ID: ${runId}`, 'error');
+                        btn.disabled = false;
+                        btn.textContent = 'Generate DQ Rules';
+                    }
+                }, 5000);
+
+            } catch (e) {
+                showStatus(`Error: ${e.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Generate DQ Rules';
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.className = 'status-bar ' + type;
+            statusBar.textContent = message;
+        }
+
+        function showResults(rules) {
+            const resultsSection = document.getElementById('results-section');
+            resultsSection.classList.remove('hidden');
+
+            if (rules && rules.summary) {
+                document.getElementById('rules-summary').innerHTML =
+                    `<p><strong>Summary:</strong> ${rules.summary}</p>`;
+            }
+
+            document.getElementById('rules-json').textContent =
+                JSON.stringify(rules, null, 2);
+        }
+
+        function downloadRules() {
+            if (!currentRules) return;
+
+            const table = document.getElementById('table').value;
+            const blob = new Blob([JSON.stringify(currentRules, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dq_rules_${table}_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetForm() {
+            document.getElementById('prompt').value = '';
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('status-bar').className = 'status-bar';
+            currentRules = null;
+        }
+    </script>
+</body>
+</html>

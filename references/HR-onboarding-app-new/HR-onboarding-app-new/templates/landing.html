@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body text-center p-5">
+                <h2 class="card-title mb-4">
+                    <i class="bi bi-people-fill text-primary"></i>
+                    <br>
+                    Welcome!
+                </h2>
+                <p class="text-muted mb-4">
+                    Select your role to continue to the HR Onboarding Portal.
+                </p>
+
+                <form method="POST" action="/select-role">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-primary btn-lg" name="role" value="USER">
+                            <i class="bi bi-person me-2"></i>
+                            Employee
+                        </button>
+
+                        <button class="btn btn-danger btn-lg" name="role" value="ADMIN">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            Admin
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4 text-muted small">
+            <p>
+                <i class="bi bi-info-circle me-1"></i>
+                <strong>Employee:</strong> Complete onboarding tasks and ask HR questions
+                <br>
+                <strong>Admin:</strong> View HR analytics dashboard
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

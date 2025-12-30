@@ -1,28 +1,17 @@
 # Databricks App Configuration
 # Deploy this app using Databricks Apps
 
-name: dq-rule-generator
-description: Data Quality Rule Generator with AI assistance
+command: [
+  "gunicorn",
+  "--bind", "0.0.0.0:8000",
+  "--workers", "2",
+  "--timeout", "300",
+  "app:app"
+]
 
-# Entry point
-command:
-  - streamlit
-  - run
-  - app/app.py
-  - --server.port
-  - "8080"
-  - --server.address
-  - "0.0.0.0"
-
-# Environment variables
-# Note: Set DQ_GENERATION_JOB_ID in the Databricks Apps UI under Environment tab
 env:
   - name: SAMPLE_DATA_LIMIT
     value: "100"
 
   - name: DQ_GENERATION_JOB_ID
     value: "622090287311428"
-
-# Python dependencies
-dependencies:
-  - requirements.txt
