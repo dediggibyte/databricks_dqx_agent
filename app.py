@@ -237,9 +237,17 @@ Format your response as JSON with the following structure:
             max_tokens=2000
         )
 
-        # Parse the response
-        if response.choices and len(response.choices) > 0:
-            content = response.choices[0].message.content
+        # Parse the response - handle both dict and object responses
+        choices = response.choices if hasattr(response, 'choices') else response.get('choices', [])
+        if choices and len(choices) > 0:
+            choice = choices[0]
+            # Handle both dict and object for message
+            if isinstance(choice, dict):
+                message = choice.get('message', {})
+                content = message.get('content', '') if isinstance(message, dict) else getattr(message, 'content', '')
+            else:
+                message = choice.message
+                content = message.content if hasattr(message, 'content') else message.get('content', '')
 
             # Try to extract JSON from the response
             try:
