@@ -36,6 +36,17 @@ print(f"Timestamp: {timestamp}")
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## Step 1b: Load the Data
+
+# COMMAND ----------
+
+# Load the DataFrame from the specified table
+df = spark.table(table_name)
+print(f"Loaded table with {df.count()} rows and {len(df.columns)} columns")
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Step 2: Profile the Data with DQX
 
 # COMMAND ----------
