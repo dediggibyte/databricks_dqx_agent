@@ -3,16 +3,11 @@ databricks-sdk>=0.20.0
 databricks-labs-dqx[llm]>=0.3.0
 pyspark>=3.5.0
 
-# Web UI
+# Web UI (Databricks App)
 streamlit>=1.30.0
 
-# Database connectivity (Lakebase)
-psycopg[binary]>=3.1.0
-sqlalchemy>=2.0.0
-
-# AI/LLM
+# AI/LLM (for notebook)
 dspy-ai>=2.4.0
 
 # Utilities
-python-dotenv>=1.0.0
 pandas>=2.0.0

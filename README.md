@@ -1,277 +1,152 @@
 # Databricks DQX Agent
 
-This repository provides a complete solution for creating data quality configurations using the Databricks DQX library with AI assistance from Databricks hosted model serving endpoints.
+Generate data quality rules using AI assistance with Databricks DQX library.
 
-## Architecture Overview
+## Overview
+
+This solution provides:
+- **Step 1**: Databricks App with table dropdown and sample data preview
+- **Step 2**: AI-powered DQ rule generation via Databricks notebook job
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Databricks App (Streamlit)                         │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐   │
-│  │ Table Dropdown   │  │ Prompt Input     │  │ Rule Editor              │   │
-│  │ + Sample Data    │  │ + Job Trigger    │  │ + Confirmation           │   │
-│  └────────┬─────────┘  └────────┬─────────┘  └───────────┬──────────────┘   │
-└───────────┼─────────────────────┼────────────────────────┼──────────────────┘
-            │                     │                        │
-            │                     ▼                        │
-            │         ┌──────────────────────┐             │
-            │         │ Databricks Job       │             │
-            │         │ (Serverless Cluster) │             │
-            │         │                      │             │
-            │         │ ┌──────────────────┐ │             │
-            │         │ │ DQX Profiler     │ │             │
-            │         │ │ + AI Generation  │ │             │
-            │         │ └──────────────────┘ │             │
-            │         └──────────┬───────────┘             │
-            │                    │                         │
-            │                    ▼                         │
-            │         ┌──────────────────────┐             │
-            │         │ AgentBricks Tool     │             │
-            │         │ (DQ Rule Summarizer) │             │
-            │         └──────────┬───────────┘             │
-            │                    │                         │
-            └────────────────────┼─────────────────────────┘
-                                 │
-                                 ▼
-                      ┌──────────────────────┐
-                      │ Lakebase (PostgreSQL)│
-                      │ - Versioned Rules    │
-                      │ - Event Tracking     │
-                      └──────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                  Databricks App (Streamlit)                  │
+│  ┌─────────────────────┐    ┌─────────────────────────────┐ │
+│  │ Step 1:             │    │ Step 2:                     │ │
+│  │ - Catalog dropdown  │    │ - Prompt input              │ │
+│  │ - Schema dropdown   │    │ - Trigger job               │ │
+│  │ - Table dropdown    │    │ - Display generated rules   │ │
+│  │ - Sample data view  │    │ - Download JSON             │ │
+│  └─────────────────────┘    └──────────────┬──────────────┘ │
+└────────────────────────────────────────────┼────────────────┘
+                                             │
+                                             ▼
+                              ┌──────────────────────────────┐
+                              │   Databricks Job             │
+                              │   (Serverless Cluster)       │
+                              │                              │
+                              │   1. Profile table with DQX  │
+                              │   2. Generate rules with AI  │
+                              │   3. Return JSON output      │
+                              └──────────────────────────────┘
 ```
 
 ## Components
 
 ### 1. Databricks App (`app/app.py`)
-A Streamlit-based web application that provides:
-- **Table Selection**: Dropdown to browse catalogs, schemas, and tables
-- **Sample Data Preview**: View up to 100 rows of selected table data
-- **Prompt Input**: Natural language interface for describing DQ rules
-- **Rule Editor**: JSON editor for reviewing and modifying generated rules
-- **Confirmation & Save**: Store validated rules to Lakebase with versioning
+Streamlit-based web application:
+- **Cascading dropdowns**: Catalog → Schema → Table selection
+- **Sample data preview**: View table data with configurable row limit
+- **Column information**: Data types and null counts
+- **Prompt input**: Natural language DQ requirements
+- **Job trigger**: Submits prompt to notebook job
+- **Results display**: Shows generated rules with download option
 
 ### 2. DQ Rule Generation Notebook (`notebooks/generate_dq_rules.py`)
-A Databricks notebook designed to run as a serverless job:
+Databricks notebook for serverless job execution:
 - Profiles input data using DQX Profiler
 - Generates DQ rules using AI (DSPy + Databricks LLM endpoints)
 - Validates rules against DQX schema
 - Returns structured JSON output
 
-### 3. AgentBricks Tools (Unity Catalog Functions)
-Unity Catalog Functions that can be registered in the Multi-Agent Supervisor UI:
-
-| Function | Purpose |
-|----------|---------|
-| `summarize_dq_rules` | Analyzes DQ rules and provides human-readable summaries |
-| `generate_dq_rules` | Generates DQ rules from natural language requirements |
-| `save_dq_rule` | Saves rules to Lakebase with versioning |
-
-**Setup notebooks:**
-- `notebooks/create_uc_function_summarizer.py` - Creates the summarizer function
-- `notebooks/create_uc_function_generator.py` - Creates the generator function
-- `notebooks/create_uc_function_save_rule.py` - Creates the save function
-
-### 4. Lakebase Client (`lakebase/client.py`)
-PostgreSQL client for rule persistence:
-- OAuth token-based authentication
-- Automatic version management
-- Rule event tracking
-- History and rollback support
-
 ## Setup
 
 ### Prerequisites
 - Databricks workspace with Unity Catalog enabled
-- Lakebase instance provisioned
-- Model serving endpoint configured
+- Model serving endpoint (e.g., `databricks-meta-llama-3-1-70b-instruct`)
 - Python 3.10+
 
-### Installation
+### Step 1: Upload the Notebook
 
-1. Clone the repository:
+1. Upload `notebooks/generate_dq_rules.py` to your Databricks workspace
+2. Recommended path: `/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules`
+
+### Step 2: Create a Databricks Job
+
+1. Go to **Workflows → Jobs → Create Job**
+2. Configure:
+   - **Task name**: `generate_dq_rules`
+   - **Type**: Notebook
+   - **Source**: Select the uploaded notebook
+   - **Cluster**: Serverless
+3. Save and note the **Job ID**
+
+### Step 3: Deploy the Databricks App
+
+Option A - Using Databricks CLI:
 ```bash
-git clone <repository-url>
-cd databricks_dqx_agent
+databricks apps deploy dq-rule-generator --source-path /path/to/databricks_dqx_agent
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+Option B - Manual deployment:
+1. Go to **Compute → Apps → Create App**
+2. Upload the `app/` folder
+3. Set entry point to `app/app.py`
 
-3. Configure environment variables:
+### Step 4: Configure the App
+
+In the app sidebar, enter your **DQ Generation Job ID**
+
+Or set environment variable:
 ```bash
-export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-export DATABRICKS_TOKEN="your-token"
 export DQ_GENERATION_JOB_ID="your-job-id"
-export LAKEBASE_HOST="your-lakebase-host"
-export LAKEBASE_DATABASE="dqx_rules_db"
-export MODEL_SERVING_ENDPOINT="databricks-meta-llama-3-1-70b-instruct"
 ```
-
-### Databricks App Deployment
-
-1. Upload the repository to your Databricks workspace
-2. Create a new Databricks App using `app.yaml`
-3. Configure the required environment variables
-4. Add Lakebase as a resource
-
-### Job Configuration
-
-1. Import `notebooks/generate_dq_rules.py` to your workspace
-2. Create a new job with serverless compute
-3. Configure notebook parameters
-4. Note the Job ID for the app configuration
-
-### Lakebase Setup
-
-Initialize the database schema:
-```python
-from lakebase import get_lakebase_client
-
-client = get_lakebase_client()
-client.initialize_schema()
-```
-
-### AgentBricks Setup (Multi-Agent Supervisor)
-
-1. **Create the Unity Catalog Functions** by running the setup notebooks:
-   - Run `notebooks/create_uc_function_summarizer.py`
-   - Run `notebooks/create_uc_function_generator.py`
-   - Run `notebooks/create_uc_function_save_rule.py`
-
-2. **Register in Multi-Agent Supervisor UI**:
-   - Navigate to **AI/ML → Agents** in Databricks
-   - Click **Create Multi-Agent Supervisor**
-   - Fill in the agent details:
-     - **Name**: `dq-agent-2025-xx-xx`
-     - **Description**: "Generates, summarizes, and saves data quality rules for tables"
-
-3. **Add Unity Catalog Functions as Tools**:
-
-   **Tool 1: DQ Rule Summarizer**
-   | Field | Value |
-   |-------|-------|
-   | Type | Unity Catalog Function |
-   | Unity Catalog function | `main.dq_tools.summarize_dq_rules` |
-   | Agent Name | DQ Rule Summarizer |
-   | Description | Analyzes data quality rules and provides comprehensive summaries including human-readable explanations, affected columns, criticality breakdown, and improvement recommendations. Use when users need to understand generated DQ rules. |
-
-   **Tool 2: DQ Rule Generator**
-   | Field | Value |
-   |-------|-------|
-   | Type | Unity Catalog Function |
-   | Unity Catalog function | `main.dq_tools.generate_dq_rules` |
-   | Agent Name | DQ Rule Generator |
-   | Description | Generates data quality rules based on natural language requirements. Takes a table name and description of desired checks. Use when users want to create new DQ rules. |
-
-   **Tool 3: DQ Rule Saver**
-   | Field | Value |
-   |-------|-------|
-   | Type | Unity Catalog Function |
-   | Unity Catalog function | `main.dq_tools.save_dq_rule` |
-   | Agent Name | DQ Rule Saver |
-   | Description | Saves data quality rules to Lakebase with automatic versioning. Use when users confirm they want to persist their DQ rules. |
-
-4. Click **Create Agent** to finalize
 
 ## Usage
 
-### Using the App
+1. **Open the Databricks App URL**
 
-1. Open the Databricks App URL
-2. Select a catalog, schema, and table from the dropdowns
-3. Review the sample data preview
-4. Enter a natural language prompt describing your DQ requirements
-5. Click "Generate DQ Rules" to trigger the AI generation
-6. Review and edit the generated rules in the JSON editor
-7. Click "Confirm and Save Rule" to persist to Lakebase
+2. **Step 1 - Select a Table**:
+   - Choose Catalog from dropdown
+   - Choose Schema from dropdown
+   - Choose Table from dropdown
+   - Review sample data preview
 
-### Using the AgentBricks Tool
-
-```python
-from tools import execute_tool
-
-# Example DQ rules
-rules = [
-    {
-        "name": "valid_email",
-        "criticality": "error",
-        "check": {
-            "function": "matches_regex",
-            "arguments": {
-                "col_name": "email",
-                "regex": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
-            }
-        }
-    }
-]
-
-# Get summary
-result = execute_tool(
-    rules=rules,
-    table_name="main.sales.customers",
-    use_llm=True
-)
-
-print(result["summary"])
-print(result["recommendations"])
-```
-
-### Using the Lakebase Client
-
-```python
-from lakebase import get_lakebase_client
-
-client = get_lakebase_client()
-
-# Save a rule
-event = client.save_rule_event(
-    table_name="main.sales.transactions",
-    rule_definition={"rules": [...]},
-    created_by="user@example.com",
-    metadata={"source": "ai_generated"}
-)
-
-print(f"Saved version {event.version}")
-
-# Get latest rule
-latest = client.get_latest_rule("main.sales.transactions")
-
-# Get history
-history = client.get_rule_history("main.sales.transactions", limit=5)
-```
+3. **Step 2 - Generate DQ Rules**:
+   - Enter natural language prompt describing your DQ requirements
+   - Example prompts:
+     - "Ensure email is valid and customer_id is not null"
+     - "Check that amounts are positive and dates are not in the future"
+     - "Validate phone numbers and ensure status is in ['active', 'inactive']"
+   - Click "Generate DQ Rules"
+   - Wait for job completion
+   - Review generated rules
+   - Download as JSON if needed
 
 ## DQ Rule Format
 
-Generated rules follow the DQX-compatible format:
+Generated rules follow DQX-compatible format:
 
 ```json
 [
   {
-    "name": "rule_name",
-    "criticality": "error|warn|info",
+    "name": "valid_email_check",
+    "criticality": "error",
     "check": {
-      "function": "check_function_name",
+      "function": "matches_regex",
       "arguments": {
-        "col_name": "column_name",
-        ...
+        "col_name": "email",
+        "regex": "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"
       }
     },
-    "filter": "optional SQL filter expression"
+    "filter": null
+  },
+  {
+    "name": "positive_amount",
+    "criticality": "warn",
+    "check": {
+      "function": "is_greater_than",
+      "arguments": {
+        "col_name": "amount",
+        "limit": 0
+      }
+    },
+    "filter": null
   }
 ]
 ```
-
-### Available Check Functions
-- `is_not_null` - Column is not null
-- `is_not_null_and_not_empty` - Column is not null and not empty string
-- `is_greater_than` - Numeric comparison
-- `is_less_than` - Numeric comparison
-- `is_in_list` - Value is in allowed list
-- `matches_regex` - Value matches pattern
-- `is_unique` - Column values are unique
-- And many more from DQX library
 
 ## Project Structure
 
@@ -279,28 +154,11 @@ Generated rules follow the DQX-compatible format:
 databricks_dqx_agent/
 ├── app/
 │   ├── __init__.py
-│   └── app.py                        # Streamlit application
-├── config/
-│   ├── __init__.py
-│   └── settings.py                   # Configuration management
-├── lakebase/
-│   ├── __init__.py
-│   └── client.py                     # Lakebase client
+│   └── app.py              # Streamlit application
 ├── notebooks/
 │   ├── __init__.py
-│   ├── generate_dq_rules.py          # DQ generation notebook (for Jobs)
-│   ├── create_uc_function_summarizer.py  # UC Function: Summarizer
-│   ├── create_uc_function_generator.py   # UC Function: Generator
-│   └── create_uc_function_save_rule.py   # UC Function: Save to Lakebase
-├── tools/
-│   ├── __init__.py
-│   ├── agentbricks_registration.py   # AgentBricks integration (Python SDK)
-│   └── dq_rule_summarizer.py         # Summarizer tool (Python SDK)
-├── utils/
-│   ├── __init__.py
-│   ├── databricks_client.py          # Databricks SDK utilities
-│   └── spark_utils.py                # Spark utilities
-├── app.yaml                          # Databricks App config
+│   └── generate_dq_rules.py  # DQ generation notebook
+├── app.yaml                  # Databricks App config
 ├── requirements.txt
 └── README.md
 ```
@@ -308,6 +166,5 @@ databricks_dqx_agent/
 ## References
 
 - [Databricks DQX Documentation](https://databrickslabs.github.io/dqx/)
-- [Databricks Lakebase Documentation](https://docs.databricks.com/aws/en/oltp/)
 - [Databricks Apps Documentation](https://docs.databricks.com/en/apps/)
-- [DSPy Framework](https://dspy-docs.vercel.app/)
+- [AI-assisted Quality Checks Generation](https://databrickslabs.github.io/dqx/docs/guide/ai_assisted_quality_checks_generation/)
