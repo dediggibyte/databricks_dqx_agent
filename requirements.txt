@@ -1,13 +1,13 @@
 # Core dependencies
-databricks-sdk>=0.20.0
-databricks-labs-dqx[llm]>=0.3.0
-pyspark>=3.5.0
+databricks-sdk
+databricks-labs-dqx[llm]
+pyspark
 
 # Web UI (Databricks App)
 streamlit>=1.30.0
 
-# AI/LLM (for notebook)
-dspy-ai>=2.4.0
+# # AI/LLM (for notebook)
+# dspy-ai>=2.4.0
 
 # Utilities
 pandas>=2.0.0
