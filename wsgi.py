@@ -1,14 +1,14 @@
 """
-Data Quality Rule Generator - Main Entry Point
+Data Quality Rule Generator - WSGI Entry Point
 ===============================================
 A Databricks App for generating DQ rules using AI assistance.
 
-This file serves as the entry point for the Flask application.
+This file serves as the WSGI entry point for the Flask application.
 All business logic is organized in the app/ package.
 
 Usage:
-    python app.py              # Run locally
-    gunicorn app:app           # Production deployment
+    python wsgi.py             # Run locally
+    gunicorn wsgi:app          # Production deployment
 
 Directory Structure:
     app/

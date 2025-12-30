@@ -41,7 +41,7 @@ This application provides a user-friendly interface for:
 
 ```
 databricks_dqx_agent/
-├── app.py                    # Main entry point
+├── wsgi.py                   # WSGI entry point (gunicorn)
 ├── app.yaml                  # Databricks App configuration
 ├── requirements.txt          # Python dependencies
 ├── README.md                 # This file
@@ -243,7 +243,7 @@ export DATABRICKS_TOKEN="your-token"
 export DQ_GENERATION_JOB_ID="your-job-id"
 
 # Run locally
-python app.py
+python wsgi.py
 ```
 
 ## Resources
