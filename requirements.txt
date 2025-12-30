@@ -11,6 +11,9 @@ python-dotenv>=1.0.0
 # Databricks SDK
 databricks-sdk>=0.56.0
 
+# OpenAI Client for Model Serving (OpenAI-compatible API)
+openai
+
 # Utilities
 pandas>=2.0.0
 

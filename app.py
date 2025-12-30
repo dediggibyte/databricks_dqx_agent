@@ -188,10 +188,25 @@ def get_table_sample(full_table_name, limit=100):
 def analyze_dq_rules_with_agent(rules, table_name, user_prompt):
     """
     AgentBricks tool that analyzes DQ rules and provides summary with reasoning.
-    Uses Databricks Model Serving endpoint for LLM inference.
+    Uses Databricks Model Serving endpoint via OpenAI-compatible API.
     """
     try:
-        ws = get_workspace_client()
+        from openai import OpenAI
+
+        # Get Databricks host and token for OpenAI client
+        databricks_host = os.getenv("DATABRICKS_HOST", "").rstrip("/")
+        databricks_token = os.getenv("DATABRICKS_TOKEN")
+
+        # If no token in env, try to get from workspace client
+        if not databricks_token:
+            ws = get_workspace_client()
+            databricks_host = ws.config.host.rstrip("/")
+            databricks_token = ws.config.token
+
+        client = OpenAI(
+            api_key=databricks_token,
+            base_url=f"{databricks_host}/serving-endpoints"
+        )
 
         # Build the analysis prompt
         rules_json = json.dumps(rules, indent=2)
@@ -228,30 +243,21 @@ Format your response as JSON with the following structure:
     "overall_quality_score": 1-10
 }}"""
 
-        # Call the model serving endpoint
-        response = ws.serving_endpoints.query(
-            name=MODEL_SERVING_ENDPOINT,
+        # Call the model serving endpoint using OpenAI client
+        response = client.chat.completions.create(
+            model=MODEL_SERVING_ENDPOINT,
             messages=[
                 {"role": "user", "content": analysis_prompt}
             ],
             max_tokens=2000
         )
 
-        # Parse the response - handle both dict and object responses
-        choices = response.choices if hasattr(response, 'choices') else response.get('choices', [])
-        if choices and len(choices) > 0:
-            choice = choices[0]
-            # Handle both dict and object for message
-            if isinstance(choice, dict):
-                message = choice.get('message', {})
-                content = message.get('content', '') if isinstance(message, dict) else getattr(message, 'content', '')
-            else:
-                message = choice.message
-                content = message.content if hasattr(message, 'content') else message.get('content', '')
+        # Parse the response
+        if response.choices and len(response.choices) > 0:
+            content = response.choices[0].message.content
 
             # Try to extract JSON from the response
             try:
-                # Find JSON in the response
                 import re
                 json_match = re.search(r'\{[\s\S]*\}', content)
                 if json_match:
