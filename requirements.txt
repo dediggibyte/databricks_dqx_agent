@@ -1,7 +1,11 @@
 # Core dependencies
 databricks-sdk
 databricks-labs-dqx[llm]
+<<<<<<< Updated upstream
 pyspark
+=======
+pyspark>=3.5.0
+>>>>>>> Stashed changes
 
 # Web UI (Databricks App)
 streamlit>=1.30.0

@@ -36,30 +36,14 @@ print(f"Timestamp: {timestamp}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 1: Load and Profile the Table Data
-
-# COMMAND ----------
-
-from pyspark.sql import SparkSession
-from databricks.sdk import WorkspaceClient
-
-spark = SparkSession.builder.getOrCreate()
-ws = WorkspaceClient()
-
-# Load the table
-df = spark.table(table_name)
-print(f"Table loaded: {df.count()} rows, {len(df.columns)} columns")
-df.printSchema()
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC ## Step 2: Profile the Data with DQX
 
 # COMMAND ----------
 
 from databricks.labs.dqx.profiler.profiler import DQProfiler
 from databricks.labs.dqx.profiler.generator import DQGenerator
+from databricks.sdk import WorkspaceClient
+ws = WorkspaceClient()
 
 # Initialize the profiler
 profiler = DQProfiler(ws)
