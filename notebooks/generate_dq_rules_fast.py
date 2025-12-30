@@ -110,8 +110,5 @@ output = {
     }
 }
 
-# Uncache the dataframe
-df.unpersist()
-
 # Return result
 dbutils.notebook.exit(json.dumps(output, default=str))
