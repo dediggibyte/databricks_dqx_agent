@@ -58,6 +58,12 @@
             padding-bottom: 10px;
         }
 
+        .card h3 {
+            font-size: 16px;
+            margin: 20px 0 10px 0;
+            color: #333;
+        }
+
         .form-group {
             margin-bottom: 15px;
         }
@@ -69,7 +75,7 @@
             color: #555;
         }
 
-        select, textarea {
+        select, textarea, input[type="text"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -77,7 +83,7 @@
             font-size: 14px;
         }
 
-        select:focus, textarea:focus {
+        select:focus, textarea:focus, input:focus {
             outline: none;
             border-color: #1a73e8;
             box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
@@ -86,6 +92,7 @@
         textarea {
             min-height: 120px;
             resize: vertical;
+            font-family: inherit;
         }
 
         .dropdown-row {
@@ -102,6 +109,8 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
         }
 
         .btn-primary {
@@ -127,6 +136,29 @@
             background-color: #e8eaed;
         }
 
+        .btn-success {
+            background-color: #137333;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #0d5c28;
+        }
+
+        .btn-danger {
+            background-color: #c5221f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #a31b19;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
         .table-info {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -150,6 +182,15 @@
         .info-box .label {
             font-size: 12px;
             color: #666;
+        }
+
+        .info-box.wide {
+            text-align: left;
+        }
+
+        .info-box.wide .value {
+            font-size: 14px;
+            word-break: break-all;
         }
 
         .data-table {
@@ -208,37 +249,6 @@
             display: block;
         }
 
-        .progress-bar {
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-
-        .progress-bar .fill {
-            height: 100%;
-            background: #1a73e8;
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .rules-output {
-            background: #f8f9fa;
-            border: 1px solid #eee;
-            border-radius: 4px;
-            padding: 15px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .rules-output pre {
-            margin: 0;
-            white-space: pre-wrap;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 12px;
-        }
-
         .column-info {
             font-size: 13px;
             color: #666;
@@ -278,6 +288,210 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Results Section Styles */
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metadata-box {
+            background: #f8f9fa;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .metadata-box.full-width {
+            grid-column: span 4;
+        }
+
+        .metadata-box.half-width {
+            grid-column: span 2;
+        }
+
+        .metadata-box label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .metadata-box .value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .metadata-box .value.large {
+            font-size: 24px;
+            color: #1a73e8;
+        }
+
+        /* Rules Editor Styles */
+        .rules-container {
+            margin-top: 20px;
+        }
+
+        .rule-card {
+            background: #fff;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .rule-header {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        .rule-header .rule-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .rule-header .rule-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .rule-badge.error {
+            background: #fce8e6;
+            color: #c5221f;
+        }
+
+        .rule-badge.warn {
+            background: #fef7e0;
+            color: #b36b00;
+        }
+
+        .rule-body {
+            padding: 15px;
+        }
+
+        .rule-field {
+            margin-bottom: 12px;
+        }
+
+        .rule-field label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .rule-field input, .rule-field select, .rule-field textarea {
+            font-size: 13px;
+            padding: 8px 10px;
+        }
+
+        .rule-field textarea {
+            min-height: 60px;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .rule-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .rule-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e8eaed;
+        }
+
+        .add-rule-btn {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed #ddd;
+            background: #fafafa;
+            color: #666;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .add-rule-btn:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+            background: #e8f0fe;
+        }
+
+        /* Summary Section */
+        .summary-box {
+            background: linear-gradient(135deg, #e8f0fe 0%, #f8f9fa 100%);
+            border: 1px solid #d2e3fc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-box h3 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .summary-box p {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Action Buttons Container */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e8eaed;
+        }
+
+        /* Collapsible Sections */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px 0;
+        }
+
+        .collapsible-header:hover {
+            color: #1a73e8;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 2000px;
+        }
+
+        .chevron {
+            transition: transform 0.3s;
+        }
+
+        .chevron.rotated {
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -359,16 +573,77 @@
             </button>
         </div>
 
-        <!-- Results -->
+        <!-- Results Section -->
         <div id="results-section" class="card hidden">
             <h2>Generated DQ Rules</h2>
-            <div id="rules-summary"></div>
-            <div class="rules-output">
-                <pre id="rules-json"></pre>
+
+            <!-- Metadata Section -->
+            <div class="metadata-grid">
+                <div class="metadata-box">
+                    <label>Rules Generated</label>
+                    <div class="value large" id="result-rules-count">0</div>
+                </div>
+                <div class="metadata-box">
+                    <label>Row Count</label>
+                    <div class="value large" id="result-row-count">0</div>
+                </div>
+                <div class="metadata-box">
+                    <label>Column Count</label>
+                    <div class="value large" id="result-col-count">0</div>
+                </div>
+                <div class="metadata-box">
+                    <label>Generated At</label>
+                    <div class="value" id="result-timestamp">-</div>
+                </div>
+                <div class="metadata-box half-width">
+                    <label>Table</label>
+                    <div class="value" id="result-table-name">-</div>
+                </div>
+                <div class="metadata-box half-width">
+                    <label>Columns</label>
+                    <div class="value" id="result-columns">-</div>
+                </div>
+                <div class="metadata-box full-width">
+                    <label>User Prompt</label>
+                    <div class="value" id="result-prompt">-</div>
+                </div>
             </div>
-            <br>
-            <button class="btn btn-secondary" onclick="downloadRules()">Download Rules JSON</button>
-            <button class="btn btn-secondary" onclick="resetForm()">Generate New Rules</button>
+
+            <!-- Summary Section -->
+            <div class="summary-box" id="summary-box">
+                <h3>Summary</h3>
+                <p id="result-summary">-</p>
+            </div>
+
+            <!-- Editable Rules Section -->
+            <h3 class="collapsible-header" onclick="toggleSection('rules-section')">
+                <span>Data Quality Rules</span>
+                <span class="chevron" id="rules-chevron">&#9660;</span>
+            </h3>
+            <div class="collapsible-content expanded" id="rules-section">
+                <div class="rules-container" id="rules-container">
+                    <!-- Rules will be inserted here -->
+                </div>
+                <button class="add-rule-btn" onclick="addNewRule()">+ Add New Rule</button>
+            </div>
+
+            <!-- Column Profiles Section (Collapsible) -->
+            <h3 class="collapsible-header" onclick="toggleSection('profiles-section')">
+                <span>Column Profiles</span>
+                <span class="chevron" id="profiles-chevron">&#9660;</span>
+            </h3>
+            <div class="collapsible-content" id="profiles-section">
+                <div id="profiles-container" style="margin-top: 15px;">
+                    <!-- Profiles will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="downloadRules()">Download Rules JSON</button>
+                <button class="btn btn-primary" onclick="downloadEditedRules()">Download Edited Rules</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Generate New Rules</button>
+            </div>
         </div>
 
         <footer>
@@ -478,7 +753,6 @@
                 document.getElementById('col-count').textContent = data.columns.length;
                 document.getElementById('row-count').textContent = data.row_count;
 
-                // Render table
                 const thead = document.querySelector('#data-table thead');
                 const tbody = document.querySelector('#data-table tbody');
 
@@ -487,11 +761,9 @@
                     '<tr>' + data.columns.map(c => `<td>${row[c] !== null ? row[c] : '<em>null</em>'}</td>`).join('') + '</tr>'
                 ).join('');
 
-                // Show column info
                 document.getElementById('column-info').textContent =
                     `Available columns: ${data.columns.join(', ')}`;
 
-                // Show generate section
                 document.getElementById('generate-section').classList.remove('hidden');
                 document.getElementById('generate-btn').disabled = false;
 
@@ -526,7 +798,6 @@
             showStatus('Triggering DQ rule generation job...', 'info');
 
             try {
-                // Trigger job
                 const triggerResponse = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -548,9 +819,8 @@
                 const runId = triggerResult.run_id;
                 showStatus(`Job triggered! Run ID: ${runId}. Waiting for completion...`, 'info');
 
-                // Poll for completion
                 let attempts = 0;
-                const maxAttempts = 120; // 10 minutes
+                const maxAttempts = 120;
 
                 const pollInterval = setInterval(async () => {
                     attempts++;
@@ -575,7 +845,7 @@
                             btn.innerHTML = `<span class="loading"></span>Running... (${Math.round(attempts * 5 / 60)}m)`;
                         }
                     } catch (e) {
-                        // Continue polling on network errors
+                        // Continue polling
                     }
 
                     if (attempts >= maxAttempts) {
@@ -599,17 +869,237 @@
             statusBar.textContent = message;
         }
 
-        function showResults(rules) {
+        function formatTimestamp(ts) {
+            if (!ts) return '-';
+            try {
+                // Handle Unix timestamp in milliseconds
+                const date = new Date(parseInt(ts));
+                if (isNaN(date.getTime())) return ts;
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            } catch (e) {
+                return ts;
+            }
+        }
+
+        function showResults(data) {
             const resultsSection = document.getElementById('results-section');
             resultsSection.classList.remove('hidden');
 
-            if (rules && rules.summary) {
-                document.getElementById('rules-summary').innerHTML =
-                    `<p><strong>Summary:</strong> ${rules.summary}</p>`;
+            // Populate metadata
+            const metadata = data.metadata || {};
+            document.getElementById('result-rules-count').textContent = metadata.rules_generated || (data.rules ? data.rules.length : 0);
+            document.getElementById('result-row-count').textContent = (metadata.row_count || 0).toLocaleString();
+            document.getElementById('result-col-count').textContent = metadata.column_count || 0;
+            document.getElementById('result-timestamp').textContent = formatTimestamp(data.timestamp);
+            document.getElementById('result-table-name').textContent = data.table_name || '-';
+            document.getElementById('result-columns').textContent = (metadata.columns || []).join(', ') || '-';
+            document.getElementById('result-prompt').textContent = data.user_prompt || '-';
+
+            // Summary
+            if (data.summary) {
+                document.getElementById('result-summary').textContent = data.summary;
             }
 
-            document.getElementById('rules-json').textContent =
-                JSON.stringify(rules, null, 2);
+            // Render editable rules
+            renderRules(data.rules || []);
+
+            // Render column profiles
+            renderProfiles(data.column_profiles || []);
+        }
+
+        function renderRules(rules) {
+            const container = document.getElementById('rules-container');
+            container.innerHTML = '';
+
+            rules.forEach((rule, index) => {
+                const ruleHtml = createRuleCard(rule, index);
+                container.innerHTML += ruleHtml;
+            });
+        }
+
+        function createRuleCard(rule, index) {
+            const check = rule.check || {};
+            const args = check.arguments || {};
+            const criticality = rule.criticality || 'error';
+            const filter = rule.filter || '';
+
+            // Build arguments display
+            let argsHtml = '';
+            for (const [key, value] of Object.entries(args)) {
+                const displayValue = Array.isArray(value) ? value.join(', ') : value;
+                argsHtml += `
+                    <div class="rule-field">
+                        <label>${key}</label>
+                        <input type="text" value="${escapeHtml(String(displayValue))}"
+                               data-rule="${index}" data-arg="${key}" onchange="updateRuleArg(this)">
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="rule-card" id="rule-${index}">
+                    <div class="rule-header">
+                        <span class="rule-title">Rule ${index + 1}: ${check.function || 'Unknown'}</span>
+                        <span class="rule-badge ${criticality}">${criticality}</span>
+                    </div>
+                    <div class="rule-body">
+                        <div class="rule-row">
+                            <div class="rule-field">
+                                <label>Function</label>
+                                <select data-rule="${index}" data-field="function" onchange="updateRuleField(this)">
+                                    <option value="is_not_null" ${check.function === 'is_not_null' ? 'selected' : ''}>is_not_null</option>
+                                    <option value="is_not_null_and_not_empty" ${check.function === 'is_not_null_and_not_empty' ? 'selected' : ''}>is_not_null_and_not_empty</option>
+                                    <option value="is_unique" ${check.function === 'is_unique' ? 'selected' : ''}>is_unique</option>
+                                    <option value="is_in_range" ${check.function === 'is_in_range' ? 'selected' : ''}>is_in_range</option>
+                                    <option value="is_in_list" ${check.function === 'is_in_list' ? 'selected' : ''}>is_in_list</option>
+                                    <option value="is_not_in_list" ${check.function === 'is_not_in_list' ? 'selected' : ''}>is_not_in_list</option>
+                                    <option value="is_not_in_future" ${check.function === 'is_not_in_future' ? 'selected' : ''}>is_not_in_future</option>
+                                    <option value="matches_regex" ${check.function === 'matches_regex' ? 'selected' : ''}>matches_regex</option>
+                                    <option value="sql_expression" ${check.function === 'sql_expression' ? 'selected' : ''}>sql_expression</option>
+                                    <option value="is_greater_than" ${check.function === 'is_greater_than' ? 'selected' : ''}>is_greater_than</option>
+                                    <option value="is_less_than" ${check.function === 'is_less_than' ? 'selected' : ''}>is_less_than</option>
+                                </select>
+                            </div>
+                            <div class="rule-field">
+                                <label>Criticality</label>
+                                <select data-rule="${index}" data-field="criticality" onchange="updateRuleField(this)">
+                                    <option value="error" ${criticality === 'error' ? 'selected' : ''}>Error</option>
+                                    <option value="warn" ${criticality === 'warn' ? 'selected' : ''}>Warning</option>
+                                </select>
+                            </div>
+                        </div>
+                        ${argsHtml}
+                        <div class="rule-field">
+                            <label>Filter (optional)</label>
+                            <input type="text" value="${escapeHtml(filter)}"
+                                   data-rule="${index}" data-field="filter" onchange="updateRuleField(this)"
+                                   placeholder="e.g., status = 'active'">
+                        </div>
+                    </div>
+                    <div class="rule-actions">
+                        <button class="btn btn-danger btn-sm" onclick="deleteRule(${index})">Delete Rule</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProfiles(profiles) {
+            const container = document.getElementById('profiles-container');
+
+            if (!profiles || profiles.length === 0) {
+                container.innerHTML = '<p style="color: #666;">No column profiles available.</p>';
+                return;
+            }
+
+            let html = '<div class="table-container"><table class="data-table"><thead><tr><th>Type</th><th>Column</th><th>Description</th><th>Parameters</th></tr></thead><tbody>';
+
+            profiles.forEach(profile => {
+                // Parse DQProfile string if needed
+                let name = '', column = '', description = '', parameters = '';
+
+                if (typeof profile === 'string') {
+                    // Parse string like "DQProfile(name='is_not_null', column='employee_id', ...)"
+                    const nameMatch = profile.match(/name='([^']+)'/);
+                    const colMatch = profile.match(/column='([^']+)'/);
+                    const descMatch = profile.match(/description='([^']+)'/);
+                    const paramsMatch = profile.match(/parameters=(\{[^}]+\}|None)/);
+
+                    name = nameMatch ? nameMatch[1] : '-';
+                    column = colMatch ? colMatch[1] : '-';
+                    description = descMatch ? descMatch[1] : '-';
+                    parameters = paramsMatch ? paramsMatch[1] : '-';
+                } else if (typeof profile === 'object') {
+                    name = profile.name || '-';
+                    column = profile.column || '-';
+                    description = profile.description || '-';
+                    parameters = profile.parameters ? JSON.stringify(profile.parameters) : '-';
+                }
+
+                html += `<tr>
+                    <td><strong>${escapeHtml(name)}</strong></td>
+                    <td>${escapeHtml(column)}</td>
+                    <td>${escapeHtml(description)}</td>
+                    <td style="font-family: monospace; font-size: 11px;">${escapeHtml(parameters)}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateRuleField(element) {
+            const ruleIndex = parseInt(element.dataset.rule);
+            const field = element.dataset.field;
+            const value = element.value;
+
+            if (field === 'function') {
+                currentRules.rules[ruleIndex].check.function = value;
+            } else if (field === 'criticality') {
+                currentRules.rules[ruleIndex].criticality = value;
+            } else if (field === 'filter') {
+                if (value) {
+                    currentRules.rules[ruleIndex].filter = value;
+                } else {
+                    delete currentRules.rules[ruleIndex].filter;
+                }
+            }
+        }
+
+        function updateRuleArg(element) {
+            const ruleIndex = parseInt(element.dataset.rule);
+            const argName = element.dataset.arg;
+            let value = element.value;
+
+            // Try to parse as number or array
+            if (!isNaN(value) && value !== '') {
+                value = parseFloat(value);
+            } else if (value.includes(',')) {
+                value = value.split(',').map(v => v.trim());
+            }
+
+            currentRules.rules[ruleIndex].check.arguments[argName] = value;
+        }
+
+        function deleteRule(index) {
+            if (confirm('Are you sure you want to delete this rule?')) {
+                currentRules.rules.splice(index, 1);
+                renderRules(currentRules.rules);
+            }
+        }
+
+        function addNewRule() {
+            const newRule = {
+                criticality: 'error',
+                check: {
+                    function: 'is_not_null',
+                    arguments: {
+                        column: ''
+                    }
+                }
+            };
+            currentRules.rules.push(newRule);
+            renderRules(currentRules.rules);
+        }
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const chevron = document.getElementById(sectionId.replace('-section', '-chevron'));
+
+            section.classList.toggle('expanded');
+            chevron.classList.toggle('rotated');
         }
 
         function downloadRules() {
@@ -621,6 +1111,26 @@
             const a = document.createElement('a');
             a.href = url;
             a.download = `dq_rules_${table}_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadEditedRules() {
+            if (!currentRules) return;
+
+            // Create a clean export with just the rules
+            const exportData = {
+                table_name: currentRules.table_name,
+                rules: currentRules.rules,
+                exported_at: new Date().toISOString()
+            };
+
+            const table = document.getElementById('table').value;
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `dq_rules_edited_${table}_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
