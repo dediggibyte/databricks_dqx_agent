@@ -192,19 +192,20 @@ def analyze_dq_rules_with_agent(rules, table_name, user_prompt):
     """
     try:
         from openai import OpenAI
+        from databricks.sdk.core import Config
 
-        # Get Databricks host and token for OpenAI client
-        databricks_host = os.getenv("DATABRICKS_HOST", "").rstrip("/")
-        databricks_token = os.getenv("DATABRICKS_TOKEN")
+        # Get user's OAuth token from Databricks Apps
+        user_token = request.headers.get('x-forwarded-access-token')
 
-        # If no token in env, try to get from workspace client
-        if not databricks_token:
-            ws = get_workspace_client()
-            databricks_host = ws.config.host.rstrip("/")
-            databricks_token = ws.config.token
+        if not user_token:
+            raise Exception("No OAuth token available. User must be authenticated via Databricks Apps.")
+
+        # Get Databricks host from SDK config (auto-configured in Databricks Apps)
+        cfg = Config()
+        databricks_host = cfg.host.rstrip("/")
 
         client = OpenAI(
-            api_key=databricks_token,
+            api_key=user_token,
             base_url=f"{databricks_host}/serving-endpoints"
         )
 
