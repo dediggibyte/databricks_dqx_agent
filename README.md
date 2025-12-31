@@ -46,6 +46,7 @@ databricks_dqx_agent/
 ├── requirements.txt          # Python dependencies
 ├── README.md                 # This file
 ├── RUNBOOK.md               # Operational guide for teams
+├── .gitignore               # Git ignore patterns
 │
 ├── app/                      # Application package
 │   ├── __init__.py          # Flask app factory
@@ -67,10 +68,8 @@ databricks_dqx_agent/
 │   ├── generate_dq_rules.py      # Full notebook (detailed output)
 │   └── generate_dq_rules_fast.py # Optimized notebook (faster)
 │
-├── templates/               # HTML templates
-│   └── index.html           # Main UI template
-│
-└── docs/                    # Documentation
+└── templates/               # HTML templates
+    └── index.html           # Main UI template
 ```
 
 ## Quick Start
