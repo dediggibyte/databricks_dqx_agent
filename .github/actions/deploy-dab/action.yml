@@ -1,0 +1,23 @@
+name: "Deploy Databricks Asset Bundle"
+description: "Validate and deploy the Databricks bundle for a target environment"
+inputs:
+  env:
+    description: "Environment key (databricks bundle target)"
+    required: true
+  profile:
+    description: "Databricks CLI profile to use"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Validate bundle
+      shell: bash
+      run: |
+        set -euxo pipefail
+        databricks bundle validate -t "${{ inputs.env }}"
+
+    - name: Deploy bundle
+      shell: bash
+      run: |
+        set -euxo pipefail
+        databricks bundle deploy -t "${{ inputs.env }}"

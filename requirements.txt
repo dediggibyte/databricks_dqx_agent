@@ -1,6 +1,7 @@
 # Core Flask Framework
-Flask==3.1.2
-Werkzeug==3.1.4
+# Note: dash (databricks-sdk dependency) requires Flask<3.1 and Werkzeug<3.1
+Flask==3.0.3
+Werkzeug==3.0.6
 
 # Production WSGI Server
 gunicorn==23.0.0

@@ -1,0 +1,47 @@
+name: Common CD Steps
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+        type: string
+
+permissions:
+  id-token: write  # Required for GitHub OIDC
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.env }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.env }}
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Setup Databricks CLI
+        uses: ./.github/actions/databricks-setup
+        with:
+          databricks-host: ${{ secrets.DATABRICKS_HOST }}
+          databricks-client-id: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          profile: ${{ inputs.env }}
+
+      - name: Deploy bundle
+        uses: ./.github/actions/deploy-dab
+        with:
+          env: ${{ inputs.env }}
+          profile: ${{ inputs.env }}

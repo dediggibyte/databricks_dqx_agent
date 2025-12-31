@@ -42,24 +42,47 @@ This application provides a user-friendly interface for:
 ```
 databricks_dqx_agent/
 ├── wsgi.py                   # WSGI entry point (gunicorn)
-├── app.yaml                  # Databricks App configuration
+├── app.yaml                  # Databricks App runtime configuration
+├── databricks.yml            # DAB bundle configuration (main)
 ├── requirements.txt          # Python dependencies
 ├── README.md                 # This file
 ├── RUNBOOK.md               # Operational guide for teams
 ├── .gitignore               # Git ignore patterns
 │
+├── resources/                # DAB resource definitions
+│   ├── apps.yml             # App definitions
+│   └── jobs.yml             # Job definitions (Serverless)
+│
+├── environments/             # Per-environment configurations
+│   ├── development/
+│   │   ├── targets.yml      # Dev target config
+│   │   └── variables.yml    # Dev variables
+│   ├── staging/
+│   │   ├── targets.yml      # Stage target config
+│   │   └── variables.yml    # Stage variables
+│   └── production/
+│       ├── targets.yml      # Prod target config
+│       └── variables.yml    # Prod variables
+│
+├── .github/                  # CI/CD workflows
+│   ├── workflows/
+│   │   ├── ci-cd-dev.yml    # Dev pipeline (auto on push/PR)
+│   │   ├── ci-cd-stage.yml  # Stage pipeline (manual)
+│   │   ├── ci-cd-prod.yml   # Prod pipeline (manual)
+│   │   ├── common-ci-steps.yml
+│   │   └── common-cd-steps.yml
+│   └── actions/
+│       ├── databricks-setup/ # GitHub OIDC + Databricks CLI
+│       └── deploy-dab/       # Bundle deployment
+│
 ├── app/                      # Application package
 │   ├── __init__.py          # Flask app factory
 │   ├── config.py            # Configuration management
-│   │
 │   ├── routes/              # API endpoints
-│   │   ├── __init__.py
 │   │   ├── catalog.py       # Unity Catalog routes
 │   │   ├── rules.py         # DQ Rules routes
 │   │   └── lakebase.py      # Lakebase routes
-│   │
 │   └── services/            # Business logic
-│       ├── __init__.py
 │       ├── databricks.py    # Databricks SDK service
 │       ├── lakebase.py      # Lakebase service
 │       └── ai.py            # AI analysis service
@@ -245,8 +268,125 @@ export DQ_GENERATION_JOB_ID="your-job-id"
 python wsgi.py
 ```
 
+## CI/CD Pipeline
+
+This project uses **GitHub Actions** with **Databricks Asset Bundles (DABs)** for automated deployment.
+
+### Pipeline Overview
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   PR/Push   │────▶│   Validate  │────▶│   Deploy    │
+│   to main   │     │   & Lint    │     │   to Dev    │
+└─────────────┘     └─────────────┘     └─────────────┘
+                                              │
+                    ┌─────────────┐           │
+                    │   Manual    │◀──────────┘
+                    │   Trigger   │
+                    └──────┬──────┘
+                           │
+              ┌────────────┴────────────┐
+              ▼                         ▼
+       ┌─────────────┐          ┌─────────────┐
+       │   Deploy    │          │   Deploy    │
+       │   to Stage  │          │   to Prod   │
+       └─────────────┘          └─────────────┘
+```
+
+### Environments
+
+| Environment | Trigger | Purpose |
+|-------------|---------|---------|
+| `dev` | Push to `main`, PR | Development testing |
+| `stage` | Manual | Pre-production validation |
+| `prod` | Manual | Production deployment |
+
+### GitHub Secrets Required
+
+Configure these secrets in your GitHub repository for each environment:
+
+| Secret | Description |
+|--------|-------------|
+| `DATABRICKS_HOST` | Databricks workspace URL (e.g., `https://dbc-xxx.cloud.databricks.com`) |
+| `DATABRICKS_CLIENT_ID` | Service Principal Application ID |
+
+### Prerequisites: GitHub OIDC Federation
+
+Before CI/CD will work, configure workload identity federation in Databricks:
+
+1. **Create a Service Principal** in Databricks Account Console
+2. **Create Federation Policy** using Databricks CLI:
+   ```bash
+   databricks account service-principal-federation-policy create <SP_ID> --json '{
+     "oidc_policy": {
+       "issuer": "https://token.actions.githubusercontent.com",
+       "audiences": ["<DATABRICKS_ACCOUNT_ID>"],
+       "subject": "repo:<GITHUB_ORG>/<REPO_NAME>:environment:<ENV>"
+     }
+   }'
+   ```
+3. **Grant Workspace Access** to the service principal
+
+See [Enable workload identity federation for GitHub Actions](https://docs.databricks.com/aws/en/dev-tools/auth/provider-github) for details.
+
+### Manual Deployment
+
+Deploy using Databricks CLI:
+
+```bash
+# Install Databricks CLI
+pip install databricks-cli
+
+# Validate bundle
+databricks bundle validate -t dev
+
+# Deploy to environment
+databricks bundle deploy -t dev    # Development
+databricks bundle deploy -t stage  # Staging
+databricks bundle deploy -t prod   # Production
+```
+
+### Bundle Configuration
+
+The bundle uses a modular structure with **Serverless compute**:
+
+```
+databricks.yml                    # Main config (includes other files)
+resources/
+├── apps.yml                      # Databricks App definition
+└── jobs.yml                      # DQ rule generation job (Serverless)
+environments/
+├── development/
+│   ├── targets.yml               # Dev target (mode: development)
+│   └── variables.yml             # Dev variables
+├── staging/
+│   ├── targets.yml               # Stage target (mode: development)
+│   └── variables.yml             # Stage variables
+└── production/
+    ├── targets.yml               # Prod target (mode: production)
+    └── variables.yml             # Prod variables
+```
+
+**Workspace Configuration:**
+
+The workspace host is configured via the `DATABRICKS_HOST` environment variable (not in YAML files). This enables:
+- Local deployment with personal workspaces
+- CI/CD deployment with GitHub secrets per environment
+- No hardcoded workspace URLs in the repository
+
+**Environment Differences:**
+
+| Setting | Development | Staging | Production |
+|---------|-------------|---------|------------|
+| App Name | dqx-rule-generator-dev | dqx-rule-generator-stage | dqx-rule-generator |
+| Job Name | DQ Rule Generation - Dev | DQ Rule Generation - Stage | DQ Rule Generation |
+| Compute | Serverless | Serverless | Serverless |
+| Mode | development | development | production |
+
 ## Resources
 
 - [Databricks DQX Documentation](https://databrickslabs.github.io/dqx/)
 - [Databricks Apps Guide](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
+- [Databricks Asset Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/)
+- [DAB App Resource](https://docs.databricks.com/aws/en/dev-tools/bundles/resources#apps)
 - [Lakebase Documentation](https://docs.databricks.com/aws/en/oltp/index.html)

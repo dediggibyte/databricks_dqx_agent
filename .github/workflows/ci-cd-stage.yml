@@ -1,0 +1,30 @@
+name: CI/CD Stage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+  deployments: write
+
+jobs:
+  run-tests:
+    strategy:
+      matrix:
+        env: [stage]
+    uses: ./.github/workflows/common-ci-steps.yml
+    with:
+      env: ${{ matrix.env }}
+    secrets: inherit
+
+  deploy-bundle:
+    needs: run-tests
+    strategy:
+      matrix:
+        env: [stage]
+    uses: ./.github/workflows/common-cd-steps.yml
+    with:
+      env: ${{ matrix.env }}
+    secrets: inherit
