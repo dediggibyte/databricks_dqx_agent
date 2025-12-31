@@ -1,0 +1,28 @@
+# Databricks App Configuration
+# Deploy this app using Databricks Apps
+
+command: [
+  "gunicorn",
+  "--bind", "0.0.0.0:8000",
+  "--workers", "2",
+  "--timeout", "300",
+  "wsgi:app"
+]
+
+env:
+  - name: SAMPLE_DATA_LIMIT
+    value: "100"
+
+  - name: DQ_GENERATION_JOB_ID
+    value: "622090287311428"
+
+  # Lakebase Configuration (Update with your Lakebase instance details)
+  - name: LAKEBASE_HOST
+    value: "ep-divine-meadow-d20ltovi.database.us-east-1.cloud.databricks.com"
+
+  - name: LAKEBASE_DATABASE
+    value: "databricks_postgres"
+
+  # Model Serving Endpoint for AI Analysis
+  - name: MODEL_SERVING_ENDPOINT
+    value: "databricks-claude-sonnet-4-5"

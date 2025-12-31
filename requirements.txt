@@ -1,0 +1,15 @@
+# Core Flask Framework
+Flask==3.1.2
+Werkzeug==3.1.4
+
+# Production WSGI Server
+gunicorn==23.0.0
+
+# Environment Variables Management
+python-dotenv==1.2.1
+
+# Databricks SDK
+databricks-sdk==0.76.0
+
+# Lakebase PostgreSQL Connection
+psycopg2-binary==2.9.11
