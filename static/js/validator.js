@@ -43,6 +43,13 @@ async function loadRuleVersions() {
     versionSelect.innerHTML = '<option value="">Loading versions...</option>';
     versionSelect.disabled = true;
 
+    // Reset state when loading new table
+    selectedRules = null;
+    clearStatus('rules-status');
+    document.getElementById('rules-preview').classList.add('hidden');
+    document.getElementById('validation-section').classList.add('hidden');
+    document.getElementById('validate-btn').disabled = true;
+
     try {
         const response = await fetch(`/api/history/${encodeURIComponent(fullTableName)}`);
         const result = await response.json();
@@ -66,6 +73,8 @@ async function loadRuleVersions() {
                     return `<option value="${v.version}" data-rules="${encodedRules}">${label}</option>`;
                 }).join('');
             versionSelect.disabled = false;
+            // Clear any previous status message when rules are found
+            clearStatus('rules-status');
         } else {
             versionSelect.innerHTML = '<option value="">No rules found for this table</option>';
             showStatus('rules-status', 'No DQ rules found for this table. Generate rules first using the Generator tab.', 'info');
@@ -73,6 +82,15 @@ async function loadRuleVersions() {
     } catch (e) {
         versionSelect.innerHTML = '<option value="">Error loading versions</option>';
         showStatus('rules-status', `Error loading rule versions: ${e.message}`, 'error');
+    }
+}
+
+// Clear status message
+function clearStatus(elementId) {
+    const statusBar = document.getElementById(elementId);
+    if (statusBar) {
+        statusBar.className = 'status-bar';
+        statusBar.textContent = '';
     }
 }
 
