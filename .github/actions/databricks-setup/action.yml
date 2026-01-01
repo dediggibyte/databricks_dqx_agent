@@ -1,0 +1,55 @@
+name: "Databricks Setup (AWS)"
+description: "Configure Databricks CLI with GitHub OIDC workload identity federation for AWS workspaces"
+
+inputs:
+  databricks-host:
+    description: "Databricks workspace URL (e.g., https://dbc-xxx.cloud.databricks.com)"
+    required: true
+  databricks-client-id:
+    description: "Databricks Service Principal Client ID (Application ID)"
+    required: true
+  profile:
+    description: "Databricks CLI profile name"
+    required: false
+    default: "DEFAULT"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Databricks CLI
+      uses: databricks/setup-cli@main
+
+    - name: Configure Databricks authentication
+      shell: bash
+      env:
+        DATABRICKS_HOST: ${{ inputs.databricks-host }}
+        DATABRICKS_CLIENT_ID: ${{ inputs.databricks-client-id }}
+        DATABRICKS_AUTH_TYPE: github-oidc
+      run: |
+        set -euo pipefail
+
+        # Write Databricks CLI profile configuration
+        cfg="$HOME/.databrickscfg"
+        mkdir -p "$(dirname "$cfg")"
+
+        {
+          echo "[${{ inputs.profile }}]"
+          echo "host = ${{ inputs.databricks-host }}"
+          echo "client_id = ${{ inputs.databricks-client-id }}"
+          echo "auth_type = github-oidc"
+        } > "$cfg"
+
+        chmod 600 "$cfg"
+
+        # Export environment variables for downstream steps
+        echo "DATABRICKS_HOST=${{ inputs.databricks-host }}" >> "$GITHUB_ENV"
+        echo "DATABRICKS_CLIENT_ID=${{ inputs.databricks-client-id }}" >> "$GITHUB_ENV"
+        echo "DATABRICKS_AUTH_TYPE=github-oidc" >> "$GITHUB_ENV"
+        echo "DATABRICKS_PROFILE=${{ inputs.profile }}" >> "$GITHUB_ENV"
+        echo "DATABRICKS_CONFIG_PROFILE=${{ inputs.profile }}" >> "$GITHUB_ENV"
+
+    - name: Verify Databricks connection
+      shell: bash
+      run: |
+        echo "Verifying Databricks CLI authentication..."
+        databricks auth describe || echo "Warning: Could not verify auth (may work in actual workflow)"

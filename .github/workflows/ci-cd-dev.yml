@@ -1,0 +1,35 @@
+name: CI/CD Dev
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+  deployments: write
+
+jobs:
+  run-tests:
+    strategy:
+      matrix:
+        env: [dev]
+    uses: ./.github/workflows/common-ci-steps.yml
+    with:
+      env: ${{ matrix.env }}
+    secrets: inherit
+
+  deploy-main-bundle:
+    needs: run-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        env: [dev]
+    uses: ./.github/workflows/common-cd-steps.yml
+    with:
+      env: ${{ matrix.env }}
+    secrets: inherit

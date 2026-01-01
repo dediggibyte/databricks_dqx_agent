@@ -1,0 +1,38 @@
+# Job Resources
+# DQ Rule Generation Job Definition (Serverless)
+
+resources:
+  jobs:
+    dq_rule_generation:
+      name: ${var.job_name}
+
+      tasks:
+        - task_key: dq
+          notebook_task:
+            notebook_path: ${var.notebook_path}
+            source: WORKSPACE
+          environment_key: Default
+
+      queue:
+        enabled: true
+
+      parameters:
+        - name: table_name
+          default: "{{table_name}}"
+        - name: timestamp
+          default: "{{job.trigger.time.timestamp_ms}}"
+        - name: user_prompt
+          default: "{{user_prompt}}"
+
+      # Serverless environment configuration
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
+
+      # Tags for cost tracking
+      tags:
+        project: "dqx-rule-generator"
+        environment: "${bundle.target}"

@@ -1,0 +1,60 @@
+# Databricks Asset Bundle Configuration (AWS - Serverless)
+# =========================================================
+#
+# Deploy using: databricks bundle deploy -t <target>
+#
+# Available targets:
+#   - dev   : Development environment (default)
+#   - stage : Staging environment
+#   - prod  : Production environment
+#
+# Prerequisites:
+#   1. Set DATABRICKS_HOST environment variable (or use GitHub secrets in CI/CD)
+#   2. Configure authentication (GitHub OIDC or token)
+#   3. For CI/CD: Configure GitHub repository secrets
+#
+# Local deployment:
+#   export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+#   databricks bundle deploy -t dev
+#
+# File Structure:
+#   databricks.yml                        # This file - main configuration
+#   resources/
+#   │   ├── apps.yml                      # App definitions
+#   │   └── jobs.yml                      # Job definitions (Serverless)
+#   environments/
+#   │   ├── development/
+#   │   │   ├── targets.yml               # Dev target config (workspace host)
+#   │   │   └── variables.yml             # Dev variables
+#   │   ├── staging/
+#   │   │   ├── targets.yml               # Stage target config (workspace host)
+#   │   │   └── variables.yml             # Stage variables
+#   │   └── production/
+#   │       ├── targets.yml               # Prod target config (workspace host)
+#   │       └── variables.yml             # Prod variables
+
+bundle:
+  name: dqx-rule-generator
+
+# Include modular configuration files
+include:
+  # Resources
+  - ./resources/*.yml
+
+  # Environment-specific configurations (targets + variables)
+  - ./environments/development/*.yml
+  - ./environments/staging/*.yml
+  - ./environments/production/*.yml
+
+# Artifact configuration
+artifacts:
+  default:
+    type: files
+    path: .
+    files:
+      - source: wsgi.py
+      - source: app.yaml
+      - source: requirements.txt
+      - source: app/**/*
+      - source: templates/**/*
+      - source: notebooks/**/*
