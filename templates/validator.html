@@ -21,37 +21,11 @@
         </div>
         <div class="form-group">
             <label for="table">Table</label>
-            <select id="table" onchange="loadSampleData()" disabled>
+            <select id="table" onchange="onTableSelected()" disabled>
                 <option value="">Select schema first</option>
             </select>
         </div>
     </div>
-</div>
-
-<!-- Sample Data Preview -->
-<div id="sample-section" class="card hidden">
-    <h2>Sample Data Preview</h2>
-    <div class="table-info">
-        <div class="info-box">
-            <div class="value" id="col-count">0</div>
-            <div class="label">Columns</div>
-        </div>
-        <div class="info-box">
-            <div class="value" id="row-count">0</div>
-            <div class="label">Rows (sample)</div>
-        </div>
-        <div class="info-box">
-            <div class="value" id="table-name">-</div>
-            <div class="label">Table</div>
-        </div>
-    </div>
-    <div class="table-container">
-        <table class="data-table" id="data-table">
-            <thead></thead>
-            <tbody></tbody>
-        </table>
-    </div>
-    <div class="column-info" id="column-info"></div>
 </div>
 
 <!-- Step 2: Select Rule Version -->

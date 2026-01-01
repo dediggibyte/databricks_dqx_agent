@@ -10,17 +10,23 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function hideSampleSection() {
-    const sampleSection = document.getElementById('sample-section');
     const rulesSection = document.getElementById('rules-section');
     const validationSection = document.getElementById('validation-section');
 
-    if (sampleSection) sampleSection.classList.add('hidden');
     if (rulesSection) rulesSection.classList.add('hidden');
     if (validationSection) validationSection.classList.add('hidden');
 }
 
-// Callback when sample data is loaded
-function onSampleDataLoaded() {
+// Called when a table is selected - skip sample data, go directly to rules
+function onTableSelected() {
+    const table = document.getElementById('table').value;
+
+    if (!table) {
+        hideSampleSection();
+        return;
+    }
+
+    // Show rules section and load rule versions
     const rulesSection = document.getElementById('rules-section');
     if (rulesSection) rulesSection.classList.remove('hidden');
     loadRuleVersions();
