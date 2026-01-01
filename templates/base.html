@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DQX{% endblock %} - Data Quality Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-logo">DQX</div>
+            <div>
+                <h1>Data Quality Manager</h1>
+                <p>Generate and validate data quality rules using AI assistance with Databricks DQX</p>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <a href="{{ url_for('generator') }}" class="tab-link {% if active_tab == 'generator' %}active{% endif %}">
+                <span class="tab-icon">&#9881;</span>
+                Generator
+            </a>
+            <a href="{{ url_for('validator') }}" class="tab-link {% if active_tab == 'validator' %}active{% endif %}">
+                <span class="tab-icon">&#10003;</span>
+                Validator
+            </a>
+        </nav>
+
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer>
+            Powered by <a href="https://databrickslabs.github.io/dqx/" target="_blank">Databricks DQX</a> | Data Quality at Scale
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

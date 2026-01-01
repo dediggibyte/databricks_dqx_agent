@@ -77,3 +77,30 @@ def get_history(table_name):
     limit = request.args.get('limit', 10, type=int)
     result = LakebaseService.get_history(table_name, limit)
     return jsonify(result)
+
+
+# ============================================================
+# Validation Endpoints
+# ============================================================
+
+@rules_bp.route('/validate', methods=['POST'])
+def validate():
+    """API: Trigger DQ rule validation job."""
+    data = request.json
+    table_name = data.get('table_name')
+    rules = data.get('rules', [])
+
+    if not table_name:
+        return jsonify({"error": "Missing table_name"}), 400
+
+    if not rules:
+        return jsonify({"error": "Missing rules"}), 400
+
+    result = databricks_service.trigger_validation_job(table_name, rules)
+    return jsonify(result)
+
+
+@rules_bp.route('/validate/status/<run_id>')
+def get_validation_status(run_id):
+    """API: Get validation job run status."""
+    return jsonify(databricks_service.get_job_status(int(run_id)))

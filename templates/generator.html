@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Generator{% endblock %}
+
+{% block content %}
+<!-- Step 1: Table Selection -->
+<div class="card">
+    <h2>Step 1: Select a Table</h2>
+    <div class="dropdown-row">
+        <div class="form-group">
+            <label for="catalog">Catalog</label>
+            <select id="catalog" onchange="loadSchemas()">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="schema">Schema</label>
+            <select id="schema" onchange="loadTables()" disabled>
+                <option value="">Select catalog first</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="table">Table</label>
+            <select id="table" onchange="loadSampleData()" disabled>
+                <option value="">Select schema first</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Sample Data Preview -->
+<div id="sample-section" class="card hidden">
+    <h2>Sample Data Preview</h2>
+    <div class="table-info">
+        <div class="info-box">
+            <div class="value" id="col-count">0</div>
+            <div class="label">Columns</div>
+        </div>
+        <div class="info-box">
+            <div class="value" id="row-count">0</div>
+            <div class="label">Rows (sample)</div>
+        </div>
+        <div class="info-box">
+            <div class="value" id="table-name">-</div>
+            <div class="label">Table</div>
+        </div>
+    </div>
+    <div class="table-container">
+        <table class="data-table" id="data-table">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="column-info" id="column-info"></div>
+</div>
+
+<!-- Step 2: Generate Rules -->
+<div id="generate-section" class="card hidden">
+    <h2>Step 2: Generate Data Quality Rules</h2>
+    <div class="form-group">
+        <label for="prompt">Describe the data quality rules you need</label>
+        <textarea id="prompt" placeholder="Examples:
+- Ensure email column contains valid email addresses
+- Check that amounts are positive numbers
+- Verify dates are not in the future
+- Make sure customer_id is not null and unique
+- Validate phone numbers match expected format"></textarea>
+    </div>
+
+    <div id="status-bar" class="status-bar"></div>
+
+    <button id="generate-btn" class="btn btn-primary" onclick="generateRules()" disabled>
+        Generate DQ Rules
+    </button>
+</div>
+
+<!-- Results Section -->
+<div id="results-section" class="card hidden">
+    <h2>Generated DQ Rules</h2>
+
+    <!-- Metadata Section -->
+    <div class="metadata-grid">
+        <div class="metadata-box">
+            <label>Rules Generated</label>
+            <div class="value large" id="result-rules-count">0</div>
+        </div>
+        <div class="metadata-box">
+            <label>Row Count</label>
+            <div class="value large" id="result-row-count">0</div>
+        </div>
+        <div class="metadata-box">
+            <label>Column Count</label>
+            <div class="value large" id="result-col-count">0</div>
+        </div>
+        <div class="metadata-box">
+            <label>Generated At</label>
+            <div class="value" id="result-timestamp">-</div>
+        </div>
+        <div class="metadata-box half-width">
+            <label>Table</label>
+            <div class="value" id="result-table-name">-</div>
+        </div>
+        <div class="metadata-box half-width">
+            <label>Columns</label>
+            <div class="value" id="result-columns">-</div>
+        </div>
+        <div class="metadata-box full-width">
+            <label>User Prompt</label>
+            <div class="value" id="result-prompt">-</div>
+        </div>
+    </div>
+
+    <!-- Summary Section -->
+    <div class="summary-box" id="summary-box">
+        <h3>Summary</h3>
+        <p id="result-summary">-</p>
+    </div>
+
+    <!-- Editable Rules Section (JSON Editor) -->
+    <h3 class="collapsible-header" onclick="toggleSection('rules-section')">
+        <span>Data Quality Rules (Editable JSON)</span>
+        <span class="chevron" id="rules-chevron">&#9660;</span>
+    </h3>
+    <div class="collapsible-content expanded" id="rules-section">
+        <div class="json-editor-container">
+            <div class="json-editor-toolbar">
+                <span class="rule-count" id="rule-count-badge">0 rules</span>
+                <button class="btn btn-sm btn-secondary" onclick="formatJson()">Format JSON</button>
+                <button class="btn btn-sm btn-secondary" onclick="validateJson()">Validate</button>
+            </div>
+            <textarea id="rules-json-editor" class="json-editor" spellcheck="false" onchange="onRulesEdited()"></textarea>
+            <div id="json-validation-message" class="json-validation-message"></div>
+        </div>
+    </div>
+
+    <!-- Column Profiles Section (Collapsible) -->
+    <h3 class="collapsible-header" onclick="toggleSection('profiles-section')">
+        <span>Column Profiles</span>
+        <span class="chevron" id="profiles-chevron">&#9660;</span>
+    </h3>
+    <div class="collapsible-content" id="profiles-section">
+        <div id="profiles-container" style="margin-top: 15px;">
+            <!-- Profiles will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="btn btn-success" onclick="downloadRules()">Download Rules JSON</button>
+        <button class="btn btn-primary" onclick="downloadEditedRules()">Download Edited Rules</button>
+        <button class="btn btn-secondary" onclick="resetForm()">Generate New Rules</button>
+    </div>
+</div>
+
+<!-- Step 4: Confirm and Save -->
+<div id="confirm-section" class="card hidden">
+    <h2>Step 4: Confirm & Save to Lakebase</h2>
+
+    <!-- Lakebase Status -->
+    <div class="lakebase-status" id="lakebase-status">
+        <span class="status-indicator" id="lakebase-indicator"></span>
+        <span id="lakebase-status-text">Checking Lakebase connection...</span>
+    </div>
+
+    <!-- AI Analysis Section -->
+    <div class="ai-analysis-container">
+        <h3>AI Analysis</h3>
+        <p class="ai-description">Use AI to analyze your DQ rules and get insights on coverage, quality, and recommendations.</p>
+
+        <button id="analyze-btn" class="btn btn-primary" onclick="analyzeRules()">
+            Analyze Rules with AI
+        </button>
+
+        <div id="analysis-status" class="status-bar"></div>
+
+        <div id="analysis-results" class="analysis-results hidden">
+            <!-- Summary -->
+            <div class="analysis-box summary-analysis">
+                <h4>Summary</h4>
+                <p id="analysis-summary">-</p>
+            </div>
+
+            <!-- Quality Score -->
+            <div class="analysis-box score-box">
+                <div class="quality-score" id="quality-score">-</div>
+                <div class="score-label">Quality Score</div>
+            </div>
+
+            <!-- Rule Analysis -->
+            <div class="analysis-box">
+                <h4>Rule-by-Rule Analysis</h4>
+                <div id="rule-analysis-list" class="rule-analysis-list">
+                    <!-- Rule analysis items will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Coverage Assessment -->
+            <div class="analysis-box">
+                <h4>Coverage Assessment</h4>
+                <p id="coverage-assessment">-</p>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="analysis-box recommendations-box">
+                <h4>Recommendations</h4>
+                <ul id="recommendations-list">
+                    <!-- Recommendations will be inserted here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save to Lakebase Section -->
+    <div class="save-section">
+        <h3>Save to Lakebase</h3>
+        <p class="save-description">Save your confirmed DQ rules to Lakebase with version tracking. Previous versions will be preserved for audit purposes.</p>
+
+        <button id="save-btn" class="btn btn-success btn-large" onclick="confirmAndSave()" disabled>
+            Confirm & Save Rules
+        </button>
+
+        <div id="save-status" class="status-bar"></div>
+
+        <div id="save-result" class="save-result hidden">
+            <div class="save-success">
+                <span class="success-icon">&#10003;</span>
+                <div class="save-details">
+                    <div class="save-detail-item">
+                        <label>Version:</label>
+                        <span id="saved-version">-</span>
+                    </div>
+                    <div class="save-detail-item">
+                        <label>Saved At:</label>
+                        <span id="saved-at">-</span>
+                    </div>
+                    <div class="save-detail-item">
+                        <label>Rule ID:</label>
+                        <span id="saved-id">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version History -->
+    <div class="history-section">
+        <h3 class="collapsible-header" onclick="toggleSection('history-section')">
+            <span>Version History</span>
+            <span class="chevron" id="history-chevron">&#9660;</span>
+        </h3>
+        <div class="collapsible-content" id="history-section">
+            <button class="btn btn-sm btn-secondary" onclick="loadHistory()" style="margin-bottom: 15px;">
+                Load History
+            </button>
+            <div id="history-container">
+                <p style="color: #666;">Click "Load History" to view previous versions.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/generator.js') }}"></script>
+{% endblock %}

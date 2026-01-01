@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Validator{% endblock %}
+
+{% block content %}
+<!-- Step 1: Table Selection -->
+<div class="card">
+    <h2>Step 1: Select a Table</h2>
+    <div class="dropdown-row">
+        <div class="form-group">
+            <label for="catalog">Catalog</label>
+            <select id="catalog" onchange="loadSchemas()">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="schema">Schema</label>
+            <select id="schema" onchange="loadTables()" disabled>
+                <option value="">Select catalog first</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="table">Table</label>
+            <select id="table" onchange="onTableSelected()" disabled>
+                <option value="">Select schema first</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Step 2: Select Rule Version -->
+<div id="rules-section" class="card hidden">
+    <h2>Step 2: Select DQ Rule Version</h2>
+    <p class="section-description">Select a previously generated rule version to validate against this table.</p>
+
+    <div class="form-group">
+        <label for="rule-version">Rule Version</label>
+        <select id="rule-version" onchange="onVersionSelected()">
+            <option value="">Loading versions...</option>
+        </select>
+    </div>
+
+    <div id="rules-status" class="status-bar"></div>
+
+    <!-- Rules Preview -->
+    <div id="rules-preview" class="hidden">
+        <h3>Rules Preview</h3>
+        <div id="rules-preview-content" class="rules-preview-content">
+            <!-- Rules preview will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<!-- Step 3: Run Validation -->
+<div id="validation-section" class="card hidden">
+    <h2>Step 3: Run Validation</h2>
+    <p class="section-description">Execute the selected DQ rules against the table data using a Databricks job.</p>
+
+    <button id="validate-btn" class="btn btn-primary btn-large" onclick="runValidation()" disabled>
+        Run Validation
+    </button>
+
+    <div id="validation-status" class="status-bar"></div>
+
+    <!-- Validation Results -->
+    <div id="validation-results" class="hidden">
+        <h3>Validation Results</h3>
+
+        <!-- Summary Stats -->
+        <div class="validation-summary">
+            <div class="summary-stat">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Total Rules</div>
+            </div>
+            <div class="summary-stat stat-pass">
+                <div class="stat-value" id="stat-passed">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="summary-stat stat-fail">
+                <div class="stat-value" id="stat-failed">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="summary-stat stat-warn">
+                <div class="stat-value" id="stat-warnings">0</div>
+                <div class="stat-label">Warnings</div>
+            </div>
+        </div>
+
+        <!-- Detailed Results Table -->
+        <div class="validation-details-container">
+            <h4>Detailed Results</h4>
+            <div id="validation-details" class="table-container">
+                <!-- Detail table will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Download Report Button -->
+        <div class="action-buttons">
+            <button class="btn btn-success" onclick="downloadValidationReport()">
+                Download Validation Report
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/validator.js') }}"></script>
+{% endblock %}

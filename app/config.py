@@ -14,8 +14,9 @@ class Config:
     SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "dq-rule-generator-secret-key")
     DEBUG = os.getenv("FLASK_DEBUG", "false").lower() == "true"
 
-    # Databricks Job
+    # Databricks Jobs
     DQ_GENERATION_JOB_ID = os.getenv("DQ_GENERATION_JOB_ID")
+    DQ_VALIDATION_JOB_ID = os.getenv("DQ_VALIDATION_JOB_ID")
 
     # Sample Data
     SAMPLE_DATA_LIMIT = int(os.getenv("SAMPLE_DATA_LIMIT", "100"))
@@ -41,3 +42,8 @@ class Config:
     def is_job_configured(cls) -> bool:
         """Check if the DQ generation job is configured."""
         return bool(cls.DQ_GENERATION_JOB_ID)
+
+    @classmethod
+    def is_validation_job_configured(cls) -> bool:
+        """Check if the DQ validation job is configured."""
+        return bool(cls.DQ_VALIDATION_JOB_ID)
