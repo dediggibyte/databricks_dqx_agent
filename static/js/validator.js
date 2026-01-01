@@ -44,9 +44,20 @@ async function loadRuleVersions() {
         if (result.success && result.history && result.history.length > 0) {
             versionSelect.innerHTML = '<option value="">Select a version</option>' +
                 result.history.map(v => {
-                    const rulesCount = Array.isArray(v.rules) ? v.rules.length : 0;
+                    // Handle rules that might be a string or already parsed object
+                    let rules = v.rules;
+                    if (typeof rules === 'string') {
+                        try {
+                            rules = JSON.parse(rules);
+                        } catch (e) {
+                            rules = [];
+                        }
+                    }
+                    const rulesCount = Array.isArray(rules) ? rules.length : 0;
                     const label = `v${v.version} - ${rulesCount} rules (${v.created_at || 'Unknown date'})`;
-                    return `<option value="${v.version}" data-rules='${JSON.stringify(v.rules)}'>${label}</option>`;
+                    // Use encodeURIComponent to safely store JSON in data attribute
+                    const encodedRules = encodeURIComponent(JSON.stringify(rules));
+                    return `<option value="${v.version}" data-rules="${encodedRules}">${label}</option>`;
                 }).join('');
             versionSelect.disabled = false;
         } else {
@@ -72,13 +83,17 @@ function onVersionSelected() {
     }
 
     try {
-        selectedRules = JSON.parse(selectedOption.getAttribute('data-rules'));
+        // Decode the URI-encoded rules data
+        const encodedRules = selectedOption.getAttribute('data-rules');
+        const decodedRules = decodeURIComponent(encodedRules);
+        selectedRules = JSON.parse(decodedRules);
         displayRulesPreview(selectedRules);
         document.getElementById('rules-preview').classList.remove('hidden');
         document.getElementById('validation-section').classList.remove('hidden');
         document.getElementById('validate-btn').disabled = false;
     } catch (e) {
-        showStatus('rules-status', 'Error parsing rules data', 'error');
+        console.error('Error parsing rules:', e);
+        showStatus('rules-status', 'Error parsing rules data: ' + e.message, 'error');
     }
 }
 
@@ -96,7 +111,10 @@ function displayRulesPreview(rules) {
     rules.forEach((rule, index) => {
         const checkFn = rule.check?.function || rule.name || '-';
         const args = rule.check?.arguments || {};
-        const column = args.col_name || (args.col_names ? args.col_names.join(', ') : '-');
+        // Handle different column field names: column, col_name, col_names, columns
+        const column = args.column || args.col_name ||
+            (args.col_names ? args.col_names.join(', ') : '') ||
+            (args.columns ? args.columns.join(', ') : '') || '-';
         const criticality = rule.criticality || '-';
 
         html += `<tr>
