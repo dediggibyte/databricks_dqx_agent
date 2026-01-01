@@ -16,6 +16,10 @@ env:
   - name: DQ_GENERATION_JOB_ID
     value: "622090287311428"
 
+  # DQ Validation Job ID (Update with your validation job ID)
+  - name: DQ_VALIDATION_JOB_ID
+    value: ""
+
   # Lakebase Configuration (Update with your Lakebase instance details)
   - name: LAKEBASE_HOST
     value: "ep-divine-meadow-d20ltovi.database.us-east-1.cloud.databricks.com"

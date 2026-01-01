@@ -160,6 +160,23 @@ class DatabricksService:
         except Exception as e:
             return {"error": str(e)}
 
+    def trigger_validation_job(self, table_name: str, rules: List[Dict]) -> Dict[str, Any]:
+        """Trigger the DQ rule validation job."""
+        if not Config.DQ_VALIDATION_JOB_ID:
+            return {"error": "DQ_VALIDATION_JOB_ID not configured"}
+
+        try:
+            response = self.client.jobs.run_now(
+                job_id=int(Config.DQ_VALIDATION_JOB_ID),
+                job_parameters={
+                    "table_name": table_name,
+                    "rules": json.dumps(rules)
+                }
+            )
+            return {"run_id": response.run_id}
+        except Exception as e:
+            return {"error": str(e)}
+
     def get_job_status(self, run_id: int) -> Dict[str, Any]:
         """Get job run status."""
         try:
