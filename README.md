@@ -1,5 +1,11 @@
 # DQX - Data Quality Rule Generator
 
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Databricks](https://img.shields.io/badge/Databricks-Apps-orange.svg)](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
+[![DQX](https://img.shields.io/badge/DQX-Data%20Quality-green.svg)](https://databrickslabs.github.io/dqx/)
+[![CI/CD Dev](https://github.com/dediggibyte/databricks_dqx_agent/actions/workflows/ci-cd-dev.yml/badge.svg)](https://github.com/dediggibyte/databricks_dqx_agent/actions/workflows/ci-cd-dev.yml)
+
 A Databricks App for generating data quality rules using AI assistance with [Databricks DQX](https://databrickslabs.github.io/dqx/).
 
 ---
@@ -78,14 +84,16 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 
 ## Documentation
 
+**Start here:** [Runbook](docs/runbook.md) - Complete guide for deployment, configuration, and operations
+
 | Document | Description |
 |----------|-------------|
+| [Runbook](docs/runbook.md) | **Complete getting started guide** |
 | [Architecture](docs/architecture.md) | System design and project structure |
 | [Configuration](docs/configuration.md) | Environment variables and app.yaml |
 | [API Reference](docs/api-reference.md) | REST API endpoints |
 | [CI/CD Pipeline](docs/ci-cd.md) | GitHub Actions deployment |
 | [DQX Checks](docs/dqx-checks.md) | Available DQX check functions |
-| [Runbook](docs/runbook.md) | Operational guide and troubleshooting |
 
 ---
 
