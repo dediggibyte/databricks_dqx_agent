@@ -16,11 +16,12 @@ def generate():
     data = request.json
     table_name = data.get('table_name')
     user_prompt = data.get('user_prompt')
+    sample_limit = data.get('sample_limit')  # Optional: if not provided, uses all rows
 
     if not table_name or not user_prompt:
         return jsonify({"error": "Missing table_name or user_prompt"}), 400
 
-    result = databricks_service.trigger_dq_job(table_name, user_prompt)
+    result = databricks_service.trigger_dq_job(table_name, user_prompt, sample_limit)
     return jsonify(result)
 
 

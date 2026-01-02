@@ -8,9 +8,17 @@ inputs:
     description: "Databricks CLI profile to use"
     required: true
   lakebase-host:
-    description: "Lakebase PostgreSQL host for storing DQ rules"
+    description: "Lakebase PostgreSQL host"
     required: false
     default: ""
+  lakebase-database:
+    description: "Lakebase database name"
+    required: false
+    default: "databricks_postgres"
+  model-serving-endpoint:
+    description: "Model serving endpoint for AI analysis"
+    required: false
+    default: "databricks-claude-sonnet-4-5"
 runs:
   using: "composite"
   steps:
@@ -20,18 +28,70 @@ runs:
         set -euxo pipefail
         databricks bundle validate -t "${{ inputs.env }}"
 
-    - name: Configure app.yaml with secrets
+    - name: Deploy bundle (first pass - creates jobs)
       shell: bash
       run: |
-        set -euo pipefail
-        # Substitute environment-specific values in app.yaml
-        if [ -n "${{ inputs.lakebase-host }}" ]; then
-          echo "Configuring LAKEBASE_HOST..."
-          sed -i 's|\${LAKEBASE_HOST}|${{ inputs.lakebase-host }}|g' app.yaml
-        fi
-        echo "app.yaml configured"
+        set -euxo pipefail
+        databricks bundle deploy -t "${{ inputs.env }}"
 
-    - name: Deploy bundle
+    - name: Configure app.yaml with job IDs and secrets
+      shell: bash
+      env:
+        LAKEBASE_HOST_VALUE: ${{ inputs.lakebase-host }}
+        LAKEBASE_DATABASE_VALUE: ${{ inputs.lakebase-database }}
+        MODEL_SERVING_ENDPOINT_VALUE: ${{ inputs.model-serving-endpoint }}
+      run: |
+        set -euo pipefail
+
+        # Get job IDs from deployed bundle
+        echo "Getting job IDs from bundle summary..."
+        BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" --output json)
+
+        GENERATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_generation.id // empty')
+        VALIDATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_validation.id // empty')
+
+        echo "Generation Job ID: $GENERATION_JOB_ID"
+        echo "Validation Job ID: $VALIDATION_JOB_ID"
+
+        # Start building env section
+        echo "" >> app.yaml
+        echo "# Environment variables injected by CI/CD" >> app.yaml
+
+        # Remove the empty env array and add populated one
+        sed -i 's/env: \[\]/env:/' app.yaml
+
+        # Add job IDs
+        if [ -n "$GENERATION_JOB_ID" ]; then
+          echo "  - name: DQ_GENERATION_JOB_ID" >> app.yaml
+          echo "    value: \"$GENERATION_JOB_ID\"" >> app.yaml
+        fi
+
+        if [ -n "$VALIDATION_JOB_ID" ]; then
+          echo "  - name: DQ_VALIDATION_JOB_ID" >> app.yaml
+          echo "    value: \"$VALIDATION_JOB_ID\"" >> app.yaml
+        fi
+
+        # Add Lakebase config if provided
+        if [ -n "$LAKEBASE_HOST_VALUE" ]; then
+          echo "  - name: LAKEBASE_HOST" >> app.yaml
+          echo "    value: \"$LAKEBASE_HOST_VALUE\"" >> app.yaml
+        fi
+
+        if [ -n "$LAKEBASE_DATABASE_VALUE" ]; then
+          echo "  - name: LAKEBASE_DATABASE" >> app.yaml
+          echo "    value: \"$LAKEBASE_DATABASE_VALUE\"" >> app.yaml
+        fi
+
+        # Add Model Serving Endpoint
+        if [ -n "$MODEL_SERVING_ENDPOINT_VALUE" ]; then
+          echo "  - name: MODEL_SERVING_ENDPOINT" >> app.yaml
+          echo "    value: \"$MODEL_SERVING_ENDPOINT_VALUE\"" >> app.yaml
+        fi
+
+        echo "app.yaml configured:"
+        cat app.yaml
+
+    - name: Deploy bundle (second pass - updates app with config)
       shell: bash
       run: |
         set -euxo pipefail
@@ -41,7 +101,6 @@ runs:
       shell: bash
       run: |
         set -euxo pipefail
-        # Use 'databricks bundle run' to deploy and start the app
         echo "Starting app deployment via bundle run..."
         databricks bundle run dqx_app -t "${{ inputs.env }}"
         echo "App deployment initiated successfully"
