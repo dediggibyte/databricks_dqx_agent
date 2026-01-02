@@ -1,5 +1,5 @@
 # App Resources
-# Databricks App Definition for DQ Rule Generator
+# Databricks App Definition for DQ Data Quality Manager
 
 resources:
   apps:
@@ -10,10 +10,48 @@ resources:
       # Source code location (relative to bundle root)
       source_code_path: .
 
+      # Environment variables for the app
+      config:
+        command:
+          - gunicorn
+          - "--bind"
+          - "0.0.0.0:8000"
+          - "--workers"
+          - "2"
+          - "--timeout"
+          - "300"
+          - "wsgi:app"
+        env:
+          # Job IDs (automatically populated from deployed jobs)
+          - name: DQ_GENERATION_JOB_ID
+            value: ${resources.jobs.dq_rule_generation.id}
+          - name: DQ_VALIDATION_JOB_ID
+            value: ${resources.jobs.dq_rule_validation.id}
+
+          # App Configuration
+          - name: SAMPLE_DATA_LIMIT
+            value: ${var.sample_data_limit}
+
+          # Lakebase Configuration
+          - name: LAKEBASE_HOST
+            value: ${var.lakebase_host}
+          - name: LAKEBASE_DATABASE
+            value: ${var.lakebase_database}
+
+          # Model Serving Endpoint
+          - name: MODEL_SERVING_ENDPOINT
+            value: ${var.model_serving_endpoint}
+
       # Resources the app can access
       resources:
         # Grant app permission to run the DQ generation job
-        - name: "dqx-job"
+        - name: "dqx-generation-job"
           job:
             id: ${resources.jobs.dq_rule_generation.id}
+            permission: "CAN_MANAGE_RUN"
+
+        # Grant app permission to run the DQ validation job
+        - name: "dqx-validation-job"
+          job:
+            id: ${resources.jobs.dq_rule_validation.id}
             permission: "CAN_MANAGE_RUN"

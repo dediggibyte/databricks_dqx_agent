@@ -55,18 +55,22 @@ databricks_dqx_agent/
 │
 ├── resources/                # DAB resource definitions
 │   ├── apps.yml              # App definitions
-│   └── jobs.yml              # Job definitions (Serverless)
+│   ├── generation_job.yml    # DQ rule generation job (Serverless)
+│   └── validation_job.yml    # DQ rule validation job (Serverless)
 │
 ├── environments/             # Per-environment configurations
-│   ├── development/
+│   ├── dev/
 │   │   ├── targets.yml       # Dev target config
-│   │   └── variables.yml     # Dev variables
-│   ├── staging/
+│   │   ├── variables.yml     # Dev variables
+│   │   └── permissions.yml   # Dev permissions
+│   ├── stage/
 │   │   ├── targets.yml       # Stage target config
-│   │   └── variables.yml     # Stage variables
-│   └── production/
+│   │   ├── variables.yml     # Stage variables
+│   │   └── permissions.yml   # Stage permissions
+│   └── prod/
 │       ├── targets.yml       # Prod target config
-│       └── variables.yml     # Prod variables
+│       ├── variables.yml     # Prod variables
+│       └── permissions.yml   # Prod permissions
 │
 ├── .github/                  # CI/CD workflows
 │   ├── workflows/
@@ -92,11 +96,13 @@ databricks_dqx_agent/
 │       └── ai.py             # AI analysis service
 │
 ├── notebooks/                # Databricks notebooks
-│   ├── generate_dq_rules.py       # Full notebook (detailed output)
-│   └── generate_dq_rules_fast.py  # Optimized notebook (faster)
+│   ├── generate_dq_rules_fast.py  # DQ rule generation notebook
+│   └── validate_dq_rules.py       # DQ rule validation notebook
 │
 └── templates/                # HTML templates
-    └── index.html            # Main UI template
+    ├── base.html             # Base template with navigation
+    ├── generator.html        # DQ rule generator page
+    └── validator.html        # DQ rule validator page
 ```
 
 ## Authentication

@@ -1,0 +1,25 @@
+# Staging Environment Permissions
+# Moderate permissions for testing before production
+
+targets:
+  stage:
+    permissions:
+      # Platform admins can manage all resources
+      - group_name: "platform-admins"
+        level: CAN_MANAGE
+
+      # Data engineers can run jobs for testing
+      - group_name: "data-engineers"
+        level: CAN_RUN
+
+      # Developers can view but not modify
+      - group_name: "developers"
+        level: CAN_VIEW
+
+      # QA team can run validation jobs
+      - group_name: "qa-team"
+        level: CAN_RUN
+
+      # Service principal for CI/CD automation
+      # - service_principal_name: "dqx-stage-sp"
+      #   level: CAN_MANAGE

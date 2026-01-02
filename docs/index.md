@@ -15,33 +15,12 @@ DQX Data Quality Manager provides a web-based interface to:
 
 ## Features
 
-<div class="grid cards" markdown>
-
--   :material-robot:{ .lg .middle } __AI-Powered Rule Generation__
-
-    ---
-
-    Generate DQX-compatible data quality rules using natural language prompts and AI assistance.
-
--   :material-check-decagram:{ .lg .middle } __Rule Validation__
-
-    ---
-
-    Validate generated rules against your actual data using Databricks serverless jobs.
-
--   :material-history:{ .lg .middle } __Version Control__
-
-    ---
-
-    Store and track rule versions in Lakebase (PostgreSQL) with full audit history.
-
--   :material-chart-box:{ .lg .middle } __AI Analysis__
-
-    ---
-
-    Get AI-powered insights on rule coverage, quality scores, and recommendations.
-
-</div>
+| Feature | Description |
+|---------|-------------|
+| **AI-Powered Rule Generation** | Generate DQX-compatible data quality rules using natural language prompts and AI assistance |
+| **Rule Validation** | Validate generated rules against your actual data using Databricks serverless jobs |
+| **Version Control** | Store and track rule versions in Lakebase (PostgreSQL) with full audit history |
+| **AI Analysis** | Get AI-powered insights on rule coverage, quality scores, and recommendations |
 
 ## Quick Start
 

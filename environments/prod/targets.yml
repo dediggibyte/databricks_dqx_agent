@@ -1,12 +1,12 @@
-# Staging Environment Configuration
-# Triggered manually for pre-production validation
+# Prod Environment Configuration
+# Triggered manually after stage validation
 #
 # Workspace host is set via:
 #   - Environment variable: DATABRICKS_HOST
 #   - Or GitHub secret in CI/CD pipeline
 
 targets:
-  stage:
+  prod:
     mode: production
 
     # Workspace configuration
@@ -14,10 +14,14 @@ targets:
     workspace:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
 
-    # Stage-specific resource overrides
+    # Prod-specific resource overrides
     resources:
       jobs:
         dq_rule_generation:
           tags:
-            environment: "staging"
-            cost_center: "pre-production"
+            environment: "prod"
+            cost_center: "production"
+        dq_rule_validation:
+          tags:
+            environment: "prod"
+            cost_center: "production"

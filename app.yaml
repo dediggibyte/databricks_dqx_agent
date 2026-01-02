@@ -1,5 +1,14 @@
-# Databricks App Configuration
-# Deploy this app using Databricks Apps
+# Databricks App Configuration (Local Development)
+# ================================================
+# This file is used for local development only.
+# When deployed via DAB, the configuration in resources/apps.yml is used
+# with environment-specific variables from environments/<env>/variables.yml
+#
+# For local development, set these environment variables:
+#   export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+#   export DATABRICKS_TOKEN="your-token"
+#   export DQ_GENERATION_JOB_ID="your-job-id"
+#   export DQ_VALIDATION_JOB_ID="your-job-id"
 
 command: [
   "gunicorn",
@@ -10,23 +19,25 @@ command: [
 ]
 
 env:
+  # App Configuration
   - name: SAMPLE_DATA_LIMIT
     value: "100"
 
+  # Job IDs - Set via environment variables for local dev
+  # These are automatically populated from deployed jobs when using DAB
   - name: DQ_GENERATION_JOB_ID
-    value: "622090287311428"
+    value: "${DQ_GENERATION_JOB_ID}"
 
-  # DQ Validation Job ID (Update with your validation job ID)
   - name: DQ_VALIDATION_JOB_ID
-    value: ""
+    value: "${DQ_VALIDATION_JOB_ID}"
 
-  # Lakebase Configuration (Update with your Lakebase instance details)
+  # Lakebase Configuration - Set via environment variables
   - name: LAKEBASE_HOST
-    value: "ep-divine-meadow-d20ltovi.database.us-east-1.cloud.databricks.com"
+    value: "${LAKEBASE_HOST}"
 
   - name: LAKEBASE_DATABASE
-    value: "databricks_postgres"
+    value: "${LAKEBASE_DATABASE:-databricks_postgres}"
 
-  # Model Serving Endpoint for AI Analysis
+  # Model Serving Endpoint
   - name: MODEL_SERVING_ENDPOINT
-    value: "databricks-claude-sonnet-4-5"
+    value: "${MODEL_SERVING_ENDPOINT:-databricks-claude-sonnet-4-5}"

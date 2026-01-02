@@ -2,14 +2,8 @@
 # MAGIC %md
 # MAGIC # DQ Rule Generation (Optimized)
 # MAGIC Fast version optimized for Databricks App integration.
-
-# COMMAND ----------
-
-# MAGIC %pip install databricks-labs-dqx[llm] --quiet
-
-# COMMAND ----------
-
-dbutils.library.restartPython()
+# MAGIC
+# MAGIC **Note:** The `databricks-labs-dqx[llm]` library is installed via job environment dependencies.
 
 # COMMAND ----------
 

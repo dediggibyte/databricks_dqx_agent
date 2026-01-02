@@ -1,4 +1,4 @@
-# Development Environment Configuration
+# Dev Environment Configuration
 # Triggered automatically on push to main branch
 #
 # Workspace host is set via:
@@ -20,5 +20,9 @@ targets:
       jobs:
         dq_rule_generation:
           tags:
-            environment: "development"
+            environment: "dev"
+            cost_center: "dev-testing"
+        dq_rule_validation:
+          tags:
+            environment: "dev"
             cost_center: "dev-testing"

@@ -31,7 +31,7 @@ databricks workspace import notebooks/generate_dq_rules_fast.py \
   /Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast \
   --language PYTHON --overwrite
 
-# 3. Update notebook path in environments/development/variables.yml
+# 3. Update notebook path in environments/dev/variables.yml
 # 4. Deploy
 databricks bundle deploy -t dev
 
@@ -96,18 +96,22 @@ databricks_dqx_agent/
 │
 ├── resources/                # DAB resource definitions
 │   ├── apps.yml              # Databricks App definition
-│   └── jobs.yml              # Job definition (Serverless)
+│   ├── generation_job.yml    # DQ rule generation job (Serverless)
+│   └── validation_job.yml    # DQ rule validation job (Serverless)
 │
 ├── environments/             # Per-environment configs
-│   ├── development/
+│   ├── dev/
 │   │   ├── targets.yml       # Dev target (mode, workspace)
-│   │   └── variables.yml     # Dev variables (app_name, notebook_path)
-│   ├── staging/
+│   │   ├── variables.yml     # Dev variables (app_name, notebook_path)
+│   │   └── permissions.yml   # Dev permissions
+│   ├── stage/
 │   │   ├── targets.yml
-│   │   └── variables.yml
-│   └── production/
+│   │   ├── variables.yml
+│   │   └── permissions.yml
+│   └── prod/
 │       ├── targets.yml
-│       └── variables.yml
+│       ├── variables.yml
+│       └── permissions.yml
 │
 ├── app/                      # Flask application
 │   ├── __init__.py           # App factory (create_app)
@@ -116,10 +120,13 @@ databricks_dqx_agent/
 │   └── services/             # Business logic
 │
 ├── notebooks/                # Databricks notebooks
-│   └── generate_dq_rules_fast.py
+│   ├── generate_dq_rules_fast.py  # DQ rule generation
+│   └── validate_dq_rules.py       # DQ rule validation
 │
 ├── templates/                # HTML templates
-│   └── index.html
+│   ├── base.html             # Base template with navigation
+│   ├── generator.html        # DQ rule generator page
+│   └── validator.html        # DQ rule validator page
 │
 └── .github/                  # CI/CD workflows
     ├── workflows/
@@ -134,8 +141,8 @@ databricks_dqx_agent/
 
 | File | What to Update | When |
 |------|----------------|------|
-| `environments/<env>/variables.yml` | `notebook_path` | Before first deployment |
-| `app.yaml` | `DQ_GENERATION_JOB_ID` | After first deployment |
+| `environments/<env>/variables.yml` | `notebook_path`, `validation_notebook_path` | Before first deployment |
+| `app.yaml` | `DQ_GENERATION_JOB_ID`, `DQ_VALIDATION_JOB_ID` | After first deployment |
 | `app.yaml` | `LAKEBASE_HOST` (optional) | If using Lakebase |
 | `app.yaml` | `MODEL_SERVING_ENDPOINT` (optional) | If using AI analysis |
 
@@ -145,7 +152,10 @@ databricks_dqx_agent/
 env:
   # Required - Get from: databricks jobs list
   - name: DQ_GENERATION_JOB_ID
-    value: "<job-id>"
+    value: "<generation-job-id>"
+
+  - name: DQ_VALIDATION_JOB_ID
+    value: "<validation-job-id>"
 
   # Optional - Preview row limit
   - name: SAMPLE_DATA_LIMIT
@@ -162,7 +172,7 @@ env:
     value: "databricks-claude-sonnet-4-5"
 ```
 
-### Bundle Variables (environments/development/variables.yml)
+### Bundle Variables (environments/dev/variables.yml)
 
 ```yaml
 variables:
@@ -205,7 +215,7 @@ databricks workspace import notebooks/generate_dq_rules_fast.py \
 
 #### 3. Update Notebook Path
 
-Edit `environments/development/variables.yml`:
+Edit `environments/dev/variables.yml`:
 ```yaml
 notebook_path:
   default: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
