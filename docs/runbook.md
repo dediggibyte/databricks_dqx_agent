@@ -53,7 +53,7 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 | Tool | Installation |
 |------|--------------|
 | Databricks CLI | `pip install databricks-cli` or [Install Guide](https://docs.databricks.com/dev-tools/cli/install.html) |
-| Python 3.11+ | For local development |
+| Python 3.13+ | For local development (3.13, 3.14 supported) |
 
 ### Databricks Workspace Requirements
 
