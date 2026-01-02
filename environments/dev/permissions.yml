@@ -17,5 +17,5 @@ targets:
         level: CAN_VIEW
 
       # Service principal for CI/CD automation
-      # - service_principal_name: "dqx-dev-sp"
-      #   level: CAN_MANAGE
+      - service_principal_name: "d9aaefd6-513e-4487-9925-e1f67a05c8c6"
+        level: CAN_MANAGE
