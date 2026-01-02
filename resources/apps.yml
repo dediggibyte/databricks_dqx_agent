@@ -4,6 +4,9 @@
 # Note: App runtime configuration (command, env vars) is defined in app.yaml
 # which is deployed with the source code. This file only defines the DAB
 # resource configuration.
+#
+# Deploy: databricks bundle deploy -t <target>
+# Run:    databricks bundle run dqx_app -t <target>
 
 resources:
   apps:
@@ -18,12 +21,14 @@ resources:
       resources:
         # Grant app permission to run the DQ generation job
         - name: "dqx-generation-job"
+          description: "Job for generating DQ rules using AI"
           job:
             id: ${resources.jobs.dq_rule_generation.id}
             permission: "CAN_MANAGE_RUN"
 
         # Grant app permission to run the DQ validation job
         - name: "dqx-validation-job"
+          description: "Job for validating DQ rules against data"
           job:
             id: ${resources.jobs.dq_rule_validation.id}
             permission: "CAN_MANAGE_RUN"
