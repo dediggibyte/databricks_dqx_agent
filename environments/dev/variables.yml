@@ -1,0 +1,46 @@
+# Dev Environment Variables
+
+variables:
+  # Application Configuration
+  app_name:
+    description: "Name of the Databricks App"
+    default: "dqx-rule-generator-dev"
+
+  app_description:
+    description: "Description of the Databricks App"
+    default: "DQX Data Quality Manager - Dev Environment"
+
+  # Generation Job Configuration
+  job_name:
+    description: "Name of the DQ rule generation job"
+    default: "DQ Rule Generation - Dev"
+
+  notebook_path:
+    description: "Path to the DQ rule generation notebook"
+    default: "/Workspace/Users/nivethan.venkatachalam@diggibyte.com/databricks_dqx_agent/notebooks/generate_dq_rules_fast"
+
+  # Validation Job Configuration
+  validation_job_name:
+    description: "Name of the DQ rule validation job"
+    default: "DQ Rule Validation - Dev"
+
+  validation_notebook_path:
+    description: "Path to the DQ rule validation notebook"
+    default: "/Workspace/Users/nivethan.venkatachalam@diggibyte.com/databricks_dqx_agent/notebooks/validate_dq_rules"
+
+  # App Environment Configuration
+  sample_data_limit:
+    description: "Maximum rows to sample for data preview"
+    default: "100"
+
+  lakebase_host:
+    description: "Lakebase PostgreSQL host for storing DQ rules"
+    default: ""
+
+  lakebase_database:
+    description: "Lakebase database name"
+    default: "databricks_postgres"
+
+  model_serving_endpoint:
+    description: "Model serving endpoint for AI analysis"
+    default: "databricks-claude-sonnet-4-5"

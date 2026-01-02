@@ -1,0 +1,42 @@
+# DQ Rule Validation Job Definition (Serverless)
+
+resources:
+  jobs:
+    dq_rule_validation:
+      name: ${var.validation_job_name}
+
+      tasks:
+        - task_key: validate
+          notebook_task:
+            notebook_path: ${var.validation_notebook_path}
+            source: WORKSPACE
+          environment_key: Default
+          timeout_seconds: 300  # 5 minutes max
+
+      queue:
+        enabled: true
+
+      parameters:
+        - name: table_name
+          default: "{{table_name}}"
+        - name: rules
+          default: "{{rules}}"
+
+      # Serverless environment configuration with DQX library
+      environments:
+        - environment_key: Default
+          spec:
+            dependencies:
+              - databricks-labs-dqx
+            environment_version: "4"
+
+      performance_target: PERFORMANCE_OPTIMIZED
+
+      # Job timeout
+      timeout_seconds: 300  # 5 minutes max for entire job
+
+      # Tags for cost tracking
+      tags:
+        project: "dqx-data-quality-manager"
+        component: "validator"
+        environment: "${bundle.target}"

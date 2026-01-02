@@ -1,0 +1,21 @@
+# Development Environment Permissions
+# Relaxed permissions for development and testing
+
+targets:
+  dev:
+    permissions:
+      # Developers can manage and run all resources
+      - group_name: "developers"
+        level: CAN_MANAGE
+
+      # Data engineers can run jobs and view resources
+      - group_name: "data-engineers"
+        level: CAN_RUN
+
+      # All users can view resources in dev
+      - group_name: "users"
+        level: CAN_VIEW
+
+      # Service principal for CI/CD automation
+      # - service_principal_name: "dqx-dev-sp"
+      #   level: CAN_MANAGE

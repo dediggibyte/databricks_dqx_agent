@@ -21,17 +21,21 @@
 #   databricks.yml                        # This file - main configuration
 #   resources/
 #   │   ├── apps.yml                      # App definitions
-#   │   └── jobs.yml                      # Job definitions (Serverless)
+#   │   ├── generation_job.yml            # DQ Rule Generation Job (Serverless)
+#   │   └── validation_job.yml            # DQ Rule Validation Job (Serverless)
 #   environments/
-#   │   ├── development/
-#   │   │   ├── targets.yml               # Dev target config (workspace host)
-#   │   │   └── variables.yml             # Dev variables
-#   │   ├── staging/
-#   │   │   ├── targets.yml               # Stage target config (workspace host)
-#   │   │   └── variables.yml             # Stage variables
-#   │   └── production/
-#   │       ├── targets.yml               # Prod target config (workspace host)
-#   │       └── variables.yml             # Prod variables
+#   │   ├── dev/
+#   │   │   ├── targets.yml               # Dev target config
+#   │   │   ├── variables.yml             # Dev variables
+#   │   │   └── permissions.yml           # Dev permissions
+#   │   ├── stage/
+#   │   │   ├── targets.yml               # Stage target config
+#   │   │   ├── variables.yml             # Stage variables
+#   │   │   └── permissions.yml           # Stage permissions
+#   │   └── prod/
+#   │       ├── targets.yml               # Prod target config
+#   │       ├── variables.yml             # Prod variables
+#   │       └── permissions.yml           # Prod permissions
 
 bundle:
   name: dqx-rule-generator
@@ -41,10 +45,10 @@ include:
   # Resources
   - ./resources/*.yml
 
-  # Environment-specific configurations (targets + variables)
-  - ./environments/development/*.yml
-  - ./environments/staging/*.yml
-  - ./environments/production/*.yml
+  # Environment-specific configurations (targets, variables, permissions)
+  - ./environments/dev/*.yml
+  - ./environments/stage/*.yml
+  - ./environments/prod/*.yml
 
 # Artifact configuration
 artifacts:
@@ -57,4 +61,5 @@ artifacts:
       - source: requirements.txt
       - source: app/**/*
       - source: templates/**/*
+      - source: static/**/*
       - source: notebooks/**/*

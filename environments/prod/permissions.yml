@@ -1,0 +1,21 @@
+# Production Environment Permissions
+# Strict permissions for production environment
+
+targets:
+  prod:
+    permissions:
+      # Only platform admins can manage production resources
+      - group_name: "platform-admins"
+        level: CAN_MANAGE
+
+      # Data engineers can run jobs but not modify
+      - group_name: "data-engineers"
+        level: CAN_RUN
+
+      # Business users can view reports and results
+      - group_name: "business-users"
+        level: CAN_VIEW
+
+      # Service principal for CI/CD automation (recommended for prod)
+      # - service_principal_name: "dqx-prod-sp"
+      #   level: CAN_MANAGE
