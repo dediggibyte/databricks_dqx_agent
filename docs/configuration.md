@@ -2,7 +2,7 @@
 
 ## Environment Variables
 
-Configure these in `app.yaml`:
+Configure these in `src/app.yaml`:
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
@@ -11,23 +11,21 @@ Configure these in `app.yaml`:
 | `LAKEBASE_HOST` | Lakebase PostgreSQL host | No | - |
 | `LAKEBASE_DATABASE` | Lakebase database name | No | `databricks_postgres` |
 | `MODEL_SERVING_ENDPOINT` | AI model endpoint | No | `databricks-claude-sonnet-4-5` |
-| `SAMPLE_DATA_LIMIT` | Max rows for preview | No | `100` |
 
-## app.yaml Example
+## src/app.yaml Example
 
 ```yaml
-command: [
-  "gunicorn",
-  "--bind", "0.0.0.0:8000",
-  "--workers", "2",
-  "--timeout", "300",
-  "wsgi:app"
-]
+command:
+  - gunicorn
+  - --bind
+  - 0.0.0.0:8000
+  - --workers
+  - "2"
+  - --timeout
+  - "300"
+  - wsgi:app
 
 env:
-  - name: SAMPLE_DATA_LIMIT
-    value: "100"
-
   - name: DQ_GENERATION_JOB_ID
     value: "<generation-job-id>"
 
@@ -43,6 +41,8 @@ env:
   - name: MODEL_SERVING_ENDPOINT
     value: "databricks-claude-sonnet-4-5"
 ```
+
+> **Note:** In CI/CD deployments, `src/app.yaml` is automatically generated with job IDs and secrets from GitHub environment secrets.
 
 ## Bundle Variables
 

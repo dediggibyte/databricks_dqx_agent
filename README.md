@@ -10,6 +10,28 @@ A Databricks App for generating data quality rules using AI assistance with [Dat
 
 ---
 
+## Project Structure
+
+```
+databricks_dqx_agent/
+├── src/                      # App source code (deployed to Databricks Apps)
+│   ├── app.yaml              # Databricks App runtime configuration
+│   ├── wsgi.py               # WSGI entry point (gunicorn)
+│   ├── requirements.txt      # Python dependencies
+│   ├── app/                  # Flask application package
+│   ├── templates/            # HTML templates
+│   └── static/               # CSS and JavaScript
+│
+├── notebooks/                # Databricks notebooks
+├── resources/                # DAB resource definitions
+├── environments/             # Per-environment configurations
+├── .github/                  # CI/CD workflows
+├── docs/                     # Documentation
+└── databricks.yml            # DAB bundle configuration
+```
+
+---
+
 ## Deployment Guide
 
 ### Prerequisites
@@ -60,7 +82,7 @@ databricks bundle deploy -t dev
 databricks jobs list --output json | grep -A2 "DQ Rule"
 ```
 
-Edit `app.yaml`:
+Edit `src/app.yaml`:
 ```yaml
 env:
   - name: DQ_GENERATION_JOB_ID
@@ -108,6 +130,7 @@ export DATABRICKS_TOKEN="your-token"
 export DQ_GENERATION_JOB_ID="your-generation-job-id"
 export DQ_VALIDATION_JOB_ID="your-validation-job-id"
 
+cd src
 python wsgi.py
 ```
 

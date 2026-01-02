@@ -19,10 +19,6 @@ inputs:
     description: "Model serving endpoint for AI analysis"
     required: false
     default: "databricks-claude-sonnet-4-5"
-  unity-catalog-access:
-    description: "Comma-separated list of catalogs to grant access (e.g., 'catalog1,catalog2')"
-    required: false
-    default: ""
 runs:
   using: "composite"
   steps:
@@ -57,7 +53,7 @@ runs:
         echo "Generation Job ID: $GENERATION_JOB_ID"
         echo "Validation Job ID: $VALIDATION_JOB_ID"
 
-        # Regenerate app.yaml with proper structure
+        # Regenerate src/app.yaml with proper structure
         printf '%s\n' \
           'command:' \
           '  - gunicorn' \
@@ -69,38 +65,38 @@ runs:
           '  - "300"' \
           '  - wsgi:app' \
           '' \
-          'env:' > app.yaml
+          'env:' > src/app.yaml
 
         # Add job IDs
         if [ -n "$GENERATION_JOB_ID" ]; then
-          echo "  - name: DQ_GENERATION_JOB_ID" >> app.yaml
-          echo "    value: \"$GENERATION_JOB_ID\"" >> app.yaml
+          echo "  - name: DQ_GENERATION_JOB_ID" >> src/app.yaml
+          echo "    value: \"$GENERATION_JOB_ID\"" >> src/app.yaml
         fi
 
         if [ -n "$VALIDATION_JOB_ID" ]; then
-          echo "  - name: DQ_VALIDATION_JOB_ID" >> app.yaml
-          echo "    value: \"$VALIDATION_JOB_ID\"" >> app.yaml
+          echo "  - name: DQ_VALIDATION_JOB_ID" >> src/app.yaml
+          echo "    value: \"$VALIDATION_JOB_ID\"" >> src/app.yaml
         fi
 
         # Add Lakebase config if provided
         if [ -n "$LAKEBASE_HOST_VALUE" ]; then
-          echo "  - name: LAKEBASE_HOST" >> app.yaml
-          echo "    value: \"$LAKEBASE_HOST_VALUE\"" >> app.yaml
+          echo "  - name: LAKEBASE_HOST" >> src/app.yaml
+          echo "    value: \"$LAKEBASE_HOST_VALUE\"" >> src/app.yaml
         fi
 
         if [ -n "$LAKEBASE_DATABASE_VALUE" ]; then
-          echo "  - name: LAKEBASE_DATABASE" >> app.yaml
-          echo "    value: \"$LAKEBASE_DATABASE_VALUE\"" >> app.yaml
+          echo "  - name: LAKEBASE_DATABASE" >> src/app.yaml
+          echo "    value: \"$LAKEBASE_DATABASE_VALUE\"" >> src/app.yaml
         fi
 
         # Add Model Serving Endpoint
         if [ -n "$MODEL_SERVING_ENDPOINT_VALUE" ]; then
-          echo "  - name: MODEL_SERVING_ENDPOINT" >> app.yaml
-          echo "    value: \"$MODEL_SERVING_ENDPOINT_VALUE\"" >> app.yaml
+          echo "  - name: MODEL_SERVING_ENDPOINT" >> src/app.yaml
+          echo "    value: \"$MODEL_SERVING_ENDPOINT_VALUE\"" >> src/app.yaml
         fi
 
-        echo "app.yaml configured:"
-        cat app.yaml
+        echo "src/app.yaml configured:"
+        cat src/app.yaml
 
     - name: Deploy bundle (second pass - updates app with config)
       shell: bash
