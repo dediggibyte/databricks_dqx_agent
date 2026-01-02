@@ -49,5 +49,12 @@ runs:
           *)     echo "Unknown environment: ${{ inputs.env }}"; exit 1 ;;
         esac
 
+        # Get the workspace path where bundle files were deployed
+        # Format: /Workspace/Users/<user>/.bundle/<bundle-name>/<target>/files
+        WORKSPACE_PATH=$(databricks bundle summary -t "${{ inputs.env }}" --output json | jq -r '.workspace.file_path')
+
         echo "Deploying app: $APP_NAME"
-        databricks apps deploy "$APP_NAME" --source-code-path .
+        echo "Source code path: $WORKSPACE_PATH"
+
+        # Deploy the app with the workspace source code path
+        databricks apps deploy "$APP_NAME" --source-code-path "$WORKSPACE_PATH"
