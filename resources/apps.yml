@@ -15,7 +15,7 @@ resources:
       description: ${var.app_description}
 
       # Source code location (relative to bundle root)
-      source_code_path: .
+      source_code_path: ../
 
       # Resources the app can access
       resources:
