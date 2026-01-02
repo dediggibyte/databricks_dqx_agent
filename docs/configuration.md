@@ -46,7 +46,7 @@ env:
 
 ## Bundle Variables
 
-Configure in `environments/<env>/variables.yml`:
+Variables are declared in `databricks.yml` and values are set per-target in `environments/<env>/variables.yml`.
 
 | Variable | Description |
 |----------|-------------|
@@ -60,24 +60,16 @@ Configure in `environments/<env>/variables.yml`:
 ### Example (dev)
 
 ```yaml
-variables:
-  app_name:
-    default: "dqx-rule-generator-dev"
-
-  app_description:
-    default: "DQX Data Quality Manager - Dev Environment"
-
-  job_name:
-    default: "DQ Rule Generation - Dev"
-
-  notebook_path:
-    default: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
-
-  validation_job_name:
-    default: "DQ Rule Validation - Dev"
-
-  validation_notebook_path:
-    default: "/Workspace/Users/<your-email>/dqx_agent/validate_dq_rules"
+# environments/dev/variables.yml
+targets:
+  dev:
+    variables:
+      app_name: "dqx-rule-generator-dev"
+      app_description: "DQX Data Quality Manager - Dev Environment"
+      job_name: "DQ Rule Generation - Dev"
+      notebook_path: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
+      validation_job_name: "DQ Rule Validation - Dev"
+      validation_notebook_path: "/Workspace/Users/<your-email>/dqx_agent/validate_dq_rules"
 ```
 
 ## Workspace Configuration

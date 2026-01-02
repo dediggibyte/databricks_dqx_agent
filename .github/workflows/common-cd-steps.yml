@@ -45,3 +45,4 @@ jobs:
         with:
           env: ${{ inputs.env }}
           profile: ${{ inputs.env }}
+          lakebase-host: ${{ secrets.LAKEBASE_HOST }}

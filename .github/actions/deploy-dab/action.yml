@@ -7,6 +7,10 @@ inputs:
   profile:
     description: "Databricks CLI profile to use"
     required: true
+  lakebase-host:
+    description: "Lakebase PostgreSQL host for storing DQ rules"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -16,8 +20,34 @@ runs:
         set -euxo pipefail
         databricks bundle validate -t "${{ inputs.env }}"
 
+    - name: Configure app.yaml with secrets
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Substitute environment-specific values in app.yaml
+        if [ -n "${{ inputs.lakebase-host }}" ]; then
+          echo "Configuring LAKEBASE_HOST..."
+          sed -i 's|\${LAKEBASE_HOST}|${{ inputs.lakebase-host }}|g' app.yaml
+        fi
+        echo "app.yaml configured"
+
     - name: Deploy bundle
       shell: bash
       run: |
         set -euxo pipefail
         databricks bundle deploy -t "${{ inputs.env }}"
+
+    - name: Deploy app
+      shell: bash
+      run: |
+        set -euxo pipefail
+        # Get app name based on environment
+        case "${{ inputs.env }}" in
+          dev)   APP_NAME="dqx-rule-generator-dev" ;;
+          stage) APP_NAME="dqx-rule-generator-stage" ;;
+          prod)  APP_NAME="dqx-rule-generator-prod" ;;
+          *)     echo "Unknown environment: ${{ inputs.env }}"; exit 1 ;;
+        esac
+
+        echo "Deploying app: $APP_NAME"
+        databricks apps deploy "$APP_NAME" --source-code-path .
