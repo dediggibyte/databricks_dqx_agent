@@ -35,7 +35,7 @@ databricks workspace import notebooks/generate_dq_rules_fast.py \
 # 4. Deploy
 databricks bundle deploy -t dev
 
-# 5. Get Job ID and update app.yaml with DQ_GENERATION_JOB_ID
+# 5. Get Job ID and update src/app.yaml with DQ_GENERATION_JOB_ID
 databricks jobs list --output json | grep -A2 "DQ Rule Generation"
 
 # 6. Redeploy
@@ -80,19 +80,27 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 
 ```
 databricks_dqx_agent/
-├── README.md                 # Quick deployment guide
-├── wsgi.py                   # WSGI entry point (gunicorn)
-├── app.yaml                  # App runtime config (env vars)
 ├── databricks.yml            # DAB main configuration
-├── requirements.txt          # Python dependencies
+├── README.md                 # Quick deployment guide
 │
-├── docs/                     # Documentation
-│   ├── runbook.md            # This file
-│   ├── architecture.md       # System design
-│   ├── configuration.md      # Config reference
-│   ├── api-reference.md      # API endpoints
-│   ├── ci-cd.md              # CI/CD pipeline
-│   └── dqx-checks.md         # DQX check functions
+├── src/                      # App source code (deployed to Databricks Apps)
+│   ├── app.yaml              # App runtime config (env vars)
+│   ├── wsgi.py               # WSGI entry point (gunicorn)
+│   ├── requirements.txt      # Python dependencies
+│   ├── app/                  # Flask application
+│   │   ├── __init__.py       # App factory (create_app)
+│   │   ├── config.py         # Configuration class
+│   │   ├── routes/           # API endpoints
+│   │   └── services/         # Business logic
+│   ├── templates/            # HTML templates
+│   │   ├── base.html         # Base template with navigation
+│   │   ├── generator.html    # DQ rule generator page
+│   │   └── validator.html    # DQ rule validator page
+│   └── static/               # CSS and JavaScript
+│
+├── notebooks/                # Databricks notebooks
+│   ├── generate_dq_rules_fast.py  # DQ rule generation
+│   └── validate_dq_rules.py       # DQ rule validation
 │
 ├── resources/                # DAB resource definitions
 │   ├── apps.yml              # Databricks App definition
@@ -105,28 +113,17 @@ databricks_dqx_agent/
 │   │   ├── variables.yml     # Dev variables (app_name, notebook_path)
 │   │   └── permissions.yml   # Dev permissions
 │   ├── stage/
-│   │   ├── targets.yml
-│   │   ├── variables.yml
-│   │   └── permissions.yml
+│   │   └── ...
 │   └── prod/
-│       ├── targets.yml
-│       ├── variables.yml
-│       └── permissions.yml
+│       └── ...
 │
-├── app/                      # Flask application
-│   ├── __init__.py           # App factory (create_app)
-│   ├── config.py             # Configuration class
-│   ├── routes/               # API endpoints
-│   └── services/             # Business logic
-│
-├── notebooks/                # Databricks notebooks
-│   ├── generate_dq_rules_fast.py  # DQ rule generation
-│   └── validate_dq_rules.py       # DQ rule validation
-│
-├── templates/                # HTML templates
-│   ├── base.html             # Base template with navigation
-│   ├── generator.html        # DQ rule generator page
-│   └── validator.html        # DQ rule validator page
+├── docs/                     # Documentation
+│   ├── runbook.md            # This file
+│   ├── architecture.md       # System design
+│   ├── configuration.md      # Config reference
+│   ├── api-reference.md      # API endpoints
+│   ├── ci-cd.md              # CI/CD pipeline
+│   └── dqx-checks.md         # DQX check functions
 │
 └── .github/                  # CI/CD workflows
     ├── workflows/
@@ -142,13 +139,23 @@ databricks_dqx_agent/
 | File | What to Update | When |
 |------|----------------|------|
 | `environments/<env>/variables.yml` | `notebook_path`, `validation_notebook_path` | Before first deployment |
-| `app.yaml` | `DQ_GENERATION_JOB_ID`, `DQ_VALIDATION_JOB_ID` | After first deployment |
-| `app.yaml` | `LAKEBASE_HOST` (optional) | If using Lakebase |
-| `app.yaml` | `MODEL_SERVING_ENDPOINT` (optional) | If using AI analysis |
+| `src/app.yaml` | `DQ_GENERATION_JOB_ID`, `DQ_VALIDATION_JOB_ID` | After first deployment |
+| `src/app.yaml` | `LAKEBASE_HOST` (optional) | If using Lakebase |
+| `src/app.yaml` | `MODEL_SERVING_ENDPOINT` (optional) | If using AI analysis |
 
-### Environment Variables (app.yaml)
+### Environment Variables (src/app.yaml)
 
 ```yaml
+command:
+  - gunicorn
+  - --bind
+  - 0.0.0.0:8000
+  - --workers
+  - "2"
+  - --timeout
+  - "300"
+  - wsgi:app
+
 env:
   # Required - Get from: databricks jobs list
   - name: DQ_GENERATION_JOB_ID
@@ -156,10 +163,6 @@ env:
 
   - name: DQ_VALIDATION_JOB_ID
     value: "<validation-job-id>"
-
-  # Optional - Preview row limit
-  - name: SAMPLE_DATA_LIMIT
-    value: "100"
 
   # Optional - Lakebase for saving rules
   - name: LAKEBASE_HOST
@@ -172,18 +175,17 @@ env:
     value: "databricks-claude-sonnet-4-5"
 ```
 
+> **Note:** In CI/CD deployments, `src/app.yaml` is automatically generated with job IDs and secrets from GitHub environment secrets.
+
 ### Bundle Variables (environments/dev/variables.yml)
 
 ```yaml
-variables:
-  app_name:
-    default: "dqx-rule-generator-dev"
-
-  job_name:
-    default: "DQ Rule Generation - Dev"
-
-  notebook_path:
-    default: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
+targets:
+  dev:
+    variables:
+      app_name: "dqx-rule-generator-dev"
+      job_name: "DQ Rule Generation - Dev"
+      notebook_path: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
 ```
 
 ### Workspace Host
@@ -217,8 +219,10 @@ databricks workspace import notebooks/generate_dq_rules_fast.py \
 
 Edit `environments/dev/variables.yml`:
 ```yaml
-notebook_path:
-  default: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
+targets:
+  dev:
+    variables:
+      notebook_path: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
 ```
 
 #### 4. Validate and Deploy
@@ -237,11 +241,12 @@ databricks bundle deploy -t dev
 databricks jobs list --output json | grep -A2 "DQ Rule Generation"
 ```
 
-#### 6. Update app.yaml
+#### 6. Update src/app.yaml
 
 ```yaml
-- name: DQ_GENERATION_JOB_ID
-  value: "<job-id-from-step-5>"
+env:
+  - name: DQ_GENERATION_JOB_ID
+    value: "<job-id-from-step-5>"
 ```
 
 #### 7. Redeploy
@@ -310,6 +315,9 @@ Configure per environment in GitHub Settings → Secrets:
 |--------|-------------|
 | `DATABRICKS_HOST` | Workspace URL |
 | `DATABRICKS_CLIENT_ID` | Service Principal Client ID |
+| `LAKEBASE_HOST` | Lakebase PostgreSQL host (optional) |
+| `LAKEBASE_DATABASE` | Lakebase database name (optional) |
+| `MODEL_SERVING_ENDPOINT` | AI model endpoint (optional) |
 
 ### GitHub OIDC Setup
 
@@ -337,10 +345,11 @@ See [ci-cd.md](ci-cd.md) for detailed setup.
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | "No catalogs available" | No permissions or warehouse down | Check `USE CATALOG` permission, verify SQL Warehouse is running |
-| "Job failed to start" | Wrong Job ID or no permissions | Verify `DQ_GENERATION_JOB_ID` in app.yaml |
+| "Job failed to start" | Wrong Job ID or no permissions | Verify `DQ_GENERATION_JOB_ID` in src/app.yaml |
 | "Lakebase connection failed" | Wrong host or service down | Verify `LAKEBASE_HOST`, check Lakebase status |
 | "AI Analysis unavailable" | Endpoint not configured | Verify `MODEL_SERVING_ENDPOINT` exists |
 | Bundle validation fails | Missing DATABRICKS_HOST | Run `export DATABRICKS_HOST="..."` |
+| "No command to run" | App source path wrong | Check `source_code_path` in resources/apps.yml points to `../src` |
 
 ### Check Logs
 
@@ -388,6 +397,18 @@ databricks bundle deploy -t dev
 databricks workspace import notebooks/generate_dq_rules_fast.py \
   /Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast \
   --language PYTHON --overwrite
+```
+
+### Local Development
+
+```bash
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+export DATABRICKS_TOKEN="your-token"
+export DQ_GENERATION_JOB_ID="your-generation-job-id"
+export DQ_VALIDATION_JOB_ID="your-validation-job-id"
+
+cd src
+python wsgi.py
 ```
 
 ### View Saved Rules

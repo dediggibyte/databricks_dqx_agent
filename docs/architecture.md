@@ -39,19 +39,38 @@ This application provides a user-friendly interface for:
 
 ```
 databricks_dqx_agent/
-├── wsgi.py                   # WSGI entry point (gunicorn)
-├── app.yaml                  # Databricks App runtime configuration
 ├── databricks.yml            # DAB bundle configuration (main)
-├── requirements.txt          # Python dependencies
 ├── README.md                 # Quick start guide
 │
-├── docs/                     # Documentation
-│   ├── architecture.md       # This file
-│   ├── api-reference.md      # API endpoints
-│   ├── configuration.md      # Environment variables
-│   ├── ci-cd.md              # CI/CD pipeline
-│   ├── dqx-checks.md         # DQX check functions
-│   └── runbook.md            # Operational guide
+├── src/                      # App source code (deployed to Databricks Apps)
+│   ├── app.yaml              # Databricks App runtime configuration
+│   ├── wsgi.py               # WSGI entry point (gunicorn)
+│   ├── requirements.txt      # Python dependencies
+│   │
+│   ├── app/                  # Flask application package
+│   │   ├── __init__.py       # Flask app factory
+│   │   ├── config.py         # Configuration management
+│   │   ├── routes/           # API endpoints
+│   │   │   ├── catalog.py    # Unity Catalog routes
+│   │   │   ├── rules.py      # DQ Rules routes
+│   │   │   └── lakebase.py   # Lakebase routes
+│   │   └── services/         # Business logic
+│   │       ├── databricks.py # Databricks SDK service
+│   │       ├── lakebase.py   # Lakebase service
+│   │       └── ai.py         # AI analysis service
+│   │
+│   ├── templates/            # HTML templates
+│   │   ├── base.html         # Base template with navigation
+│   │   ├── generator.html    # DQ rule generator page
+│   │   └── validator.html    # DQ rule validator page
+│   │
+│   └── static/               # Static assets
+│       ├── css/main.css      # Styles
+│       └── js/               # JavaScript files
+│
+├── notebooks/                # Databricks notebooks
+│   ├── generate_dq_rules_fast.py  # DQ rule generation notebook
+│   └── validate_dq_rules.py       # DQ rule validation notebook
 │
 ├── resources/                # DAB resource definitions
 │   ├── apps.yml              # App definitions
@@ -83,26 +102,13 @@ databricks_dqx_agent/
 │       ├── databricks-setup/ # GitHub OIDC + Databricks CLI
 │       └── deploy-dab/       # Bundle deployment
 │
-├── app/                      # Application package
-│   ├── __init__.py           # Flask app factory
-│   ├── config.py             # Configuration management
-│   ├── routes/               # API endpoints
-│   │   ├── catalog.py        # Unity Catalog routes
-│   │   ├── rules.py          # DQ Rules routes
-│   │   └── lakebase.py       # Lakebase routes
-│   └── services/             # Business logic
-│       ├── databricks.py     # Databricks SDK service
-│       ├── lakebase.py       # Lakebase service
-│       └── ai.py             # AI analysis service
-│
-├── notebooks/                # Databricks notebooks
-│   ├── generate_dq_rules_fast.py  # DQ rule generation notebook
-│   └── validate_dq_rules.py       # DQ rule validation notebook
-│
-└── templates/                # HTML templates
-    ├── base.html             # Base template with navigation
-    ├── generator.html        # DQ rule generator page
-    └── validator.html        # DQ rule validator page
+└── docs/                     # Documentation
+    ├── architecture.md       # This file
+    ├── api-reference.md      # API endpoints
+    ├── configuration.md      # Environment variables
+    ├── ci-cd.md              # CI/CD pipeline
+    ├── dqx-checks.md         # DQX check functions
+    └── runbook.md            # Operational guide
 ```
 
 ## Authentication

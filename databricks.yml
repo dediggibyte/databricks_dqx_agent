@@ -74,5 +74,5 @@ include:
   - ./environments/stage/*.yml
   - ./environments/prod/*.yml
 
-# Note: App source code is deployed via source_code_path in resources/apps.yml
+# Note: App source code (src/) is deployed via source_code_path in resources/apps.yml
 # Notebooks are deployed via notebook tasks in job definitions
