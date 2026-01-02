@@ -27,6 +27,7 @@ async function generateRules() {
     const schema = document.getElementById('schema').value;
     const table = document.getElementById('table').value;
     const prompt = document.getElementById('prompt').value.trim();
+    const sampleLimitInput = document.getElementById('sample-limit').value;
 
     if (!prompt) {
         showStatus('status-bar', 'Please enter your data quality requirements', 'error');
@@ -40,14 +41,22 @@ async function generateRules() {
 
     showStatus('status-bar', 'Triggering DQ rule generation job...', 'info');
 
+    // Build request body - only include sample_limit if specified
+    const requestBody = {
+        table_name: fullTableName,
+        user_prompt: prompt
+    };
+
+    // If sample limit is specified, add it to the request
+    if (sampleLimitInput && parseInt(sampleLimitInput) > 0) {
+        requestBody.sample_limit = parseInt(sampleLimitInput);
+    }
+
     try {
         const triggerResponse = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                table_name: fullTableName,
-                user_prompt: prompt
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const triggerResult = await triggerResponse.json();

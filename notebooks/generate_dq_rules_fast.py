@@ -11,10 +11,12 @@
 dbutils.widgets.text("table_name", "", "Table Name")
 dbutils.widgets.text("user_prompt", "", "User Prompt")
 dbutils.widgets.text("timestamp", "", "Timestamp")
+dbutils.widgets.text("sample_limit", "", "Sample Limit (rows)")
 
 table_name = dbutils.widgets.get("table_name")
 user_prompt = dbutils.widgets.get("user_prompt")
 timestamp = dbutils.widgets.get("timestamp")
+sample_limit_str = dbutils.widgets.get("sample_limit")
 
 # COMMAND ----------
 
@@ -28,11 +30,29 @@ from databricks.labs.dqx.config import InputConfig, LLMModelConfig
 # Initialize clients
 ws = WorkspaceClient()
 
-# Load data - use cache to avoid multiple scans
-df = spark.table(table_name)
-row_count = df.count()
-columns = df.columns
+# Load data - get full table first to determine row count
+df_full = spark.table(table_name)
+total_row_count = df_full.count()
+columns = df_full.columns
 column_count = len(columns)
+
+# Apply sample limit if specified, otherwise use all rows
+sample_limit = None
+if sample_limit_str and sample_limit_str.strip():
+    try:
+        sample_limit = int(sample_limit_str)
+    except ValueError:
+        sample_limit = None
+
+# Use sampled data for profiling if limit is specified and less than total rows
+if sample_limit and sample_limit < total_row_count:
+    df = df_full.limit(sample_limit)
+    row_count = sample_limit
+    print(f"Using sample of {sample_limit:,} rows (out of {total_row_count:,} total)")
+else:
+    df = df_full
+    row_count = total_row_count
+    print(f"Using all {total_row_count:,} rows")
 
 # COMMAND ----------
 
@@ -98,6 +118,8 @@ output = {
     "column_profiles": simple_profiles,
     "metadata": {
         "row_count": row_count,
+        "total_row_count": total_row_count,
+        "sample_limit": sample_limit,
         "column_count": column_count,
         "columns": columns,
         "rules_generated": len(generated_checks)

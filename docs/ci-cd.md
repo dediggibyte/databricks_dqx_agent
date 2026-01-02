@@ -35,11 +35,13 @@ This project uses **GitHub Actions** with **Databricks Asset Bundles (DABs)** fo
 
 Configure these secrets in your GitHub repository for each environment:
 
-| Secret | Description | Required |
-|--------|-------------|----------|
-| `DATABRICKS_HOST` | Databricks workspace URL (e.g., `https://dbc-xxx.cloud.databricks.com`) | Yes |
-| `DATABRICKS_CLIENT_ID` | Service Principal Application ID | Yes |
-| `LAKEBASE_HOST` | Lakebase PostgreSQL host for DQ rule storage | No (optional) |
+| Secret | Description | Required | Default |
+|--------|-------------|----------|---------|
+| `DATABRICKS_HOST` | Databricks workspace URL (e.g., `https://dbc-xxx.cloud.databricks.com`) | Yes | - |
+| `DATABRICKS_CLIENT_ID` | Service Principal Application ID | Yes | - |
+| `LAKEBASE_HOST` | Lakebase PostgreSQL host for DQ rule storage | No | - |
+| `LAKEBASE_DATABASE` | Lakebase database name | No | `databricks_postgres` |
+| `MODEL_SERVING_ENDPOINT` | Model serving endpoint for AI analysis | No | `databricks-claude-sonnet-4-5` |
 
 ## Prerequisites: GitHub OIDC Federation
 

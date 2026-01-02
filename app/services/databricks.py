@@ -143,18 +143,30 @@ class DatabricksService:
     # Job Operations
     # ============================================================
 
-    def trigger_dq_job(self, table_name: str, user_prompt: str) -> Dict[str, Any]:
-        """Trigger the DQ rule generation job."""
+    def trigger_dq_job(self, table_name: str, user_prompt: str, sample_limit: Optional[int] = None) -> Dict[str, Any]:
+        """Trigger the DQ rule generation job.
+
+        Args:
+            table_name: Full table name (catalog.schema.table)
+            user_prompt: User's description of desired DQ rules
+            sample_limit: Optional row limit for data profiling. If None, uses all rows.
+        """
         if not Config.DQ_GENERATION_JOB_ID:
             return {"error": "DQ_GENERATION_JOB_ID not configured"}
 
         try:
+            job_parameters = {
+                "table_name": table_name,
+                "user_prompt": user_prompt
+            }
+
+            # Only pass sample_limit if specified (empty string means use all rows)
+            if sample_limit is not None:
+                job_parameters["sample_limit"] = str(sample_limit)
+
             response = self.client.jobs.run_now(
                 job_id=int(Config.DQ_GENERATION_JOB_ID),
-                job_parameters={
-                    "table_name": table_name,
-                    "user_prompt": user_prompt
-                }
+                job_parameters=job_parameters
             )
             return {"run_id": response.run_id}
         except Exception as e:

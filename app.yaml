@@ -1,43 +1,16 @@
-# Databricks App Configuration (Local Development)
-# ================================================
-# This file is used for local development only.
-# When deployed via DAB, the configuration in resources/apps.yml is used
-# with environment-specific variables from environments/<env>/variables.yml
-#
-# For local development, set these environment variables:
-#   export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-#   export DATABRICKS_TOKEN="your-token"
-#   export DQ_GENERATION_JOB_ID="your-job-id"
-#   export DQ_VALIDATION_JOB_ID="your-job-id"
+# Databricks App Configuration
+# ============================
+# This file configures the app runtime settings
+# Environment-specific values (job IDs, Lakebase, etc.) are injected during CI/CD deployment
 
-command: [
-  "gunicorn",
-  "--bind", "0.0.0.0:8000",
-  "--workers", "2",
-  "--timeout", "300",
-  "wsgi:app"
-]
+command:
+  - gunicorn
+  - --bind
+  - 0.0.0.0:8000
+  - --workers
+  - "2"
+  - --timeout
+  - "300"
+  - wsgi:app
 
-env:
-  # App Configuration
-  - name: SAMPLE_DATA_LIMIT
-    value: "100"
-
-  # Job IDs - Set via environment variables for local dev
-  # These are automatically populated from deployed jobs when using DAB
-  - name: DQ_GENERATION_JOB_ID
-    value: "${DQ_GENERATION_JOB_ID}"
-
-  - name: DQ_VALIDATION_JOB_ID
-    value: "${DQ_VALIDATION_JOB_ID}"
-
-  # Lakebase Configuration - Set via environment variables
-  - name: LAKEBASE_HOST
-    value: "${LAKEBASE_HOST}"
-
-  - name: LAKEBASE_DATABASE
-    value: "${LAKEBASE_DATABASE:-databricks_postgres}"
-
-  # Model Serving Endpoint
-  - name: MODEL_SERVING_ENDPOINT
-    value: "${MODEL_SERVING_ENDPOINT:-databricks-claude-sonnet-4-5}"
+env: []
