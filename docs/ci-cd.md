@@ -94,17 +94,21 @@ The bundle uses a modular structure with **Serverless compute**:
 databricks.yml                    # Main config (includes other files)
 resources/
 ├── apps.yml                      # Databricks App definition
-└── jobs.yml                      # DQ rule generation job (Serverless)
+├── generation_job.yml            # DQ rule generation job (Serverless)
+└── validation_job.yml            # DQ rule validation job (Serverless)
 environments/
-├── development/
+├── dev/
 │   ├── targets.yml               # Dev target (mode: production)
-│   └── variables.yml             # Dev variables
-├── staging/
+│   ├── variables.yml             # Dev variables
+│   └── permissions.yml           # Dev permissions
+├── stage/
 │   ├── targets.yml               # Stage target (mode: production)
-│   └── variables.yml             # Stage variables
-└── production/
+│   ├── variables.yml             # Stage variables
+│   └── permissions.yml           # Stage permissions
+└── prod/
     ├── targets.yml               # Prod target (mode: production)
-    └── variables.yml             # Prod variables
+    ├── variables.yml             # Prod variables
+    └── permissions.yml           # Prod permissions
 ```
 
 ## Environment Differences

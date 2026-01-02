@@ -17,7 +17,7 @@ variables:
 
   notebook_path:
     description: "Path to the DQ rule generation notebook"
-    default: "/Workspace/Users/nivethan.venkatachalam@diggibyte.com/databricks_dqx_agent/notebooks/generate_dq_rules_fast"
+    default: "/Workspace/Users/<your-email>/databricks_dqx_agent/notebooks/generate_dq_rules_fast"
 
   # Validation Job Configuration
   validation_job_name:
@@ -26,7 +26,7 @@ variables:
 
   validation_notebook_path:
     description: "Path to the DQ rule validation notebook"
-    default: "/Workspace/Users/nivethan.venkatachalam@diggibyte.com/databricks_dqx_agent/notebooks/validate_dq_rules"
+    default: "/Workspace/Users/<your-email>/databricks_dqx_agent/notebooks/validate_dq_rules"
 
   # App Environment Configuration
   sample_data_limit:

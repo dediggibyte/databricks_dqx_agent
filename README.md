@@ -41,7 +41,7 @@ databricks workspace import notebooks/generate_dq_rules_fast.py \
 
 ### Step 3: Update Configuration
 
-Edit `environments/development/variables.yml`:
+Edit `environments/dev/variables.yml`:
 ```yaml
 notebook_path:
   default: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
@@ -54,17 +54,20 @@ databricks bundle validate -t dev
 databricks bundle deploy -t dev
 ```
 
-### Step 5: Get Job ID & Update App
+### Step 5: Get Job IDs & Update App
 
 ```bash
-databricks jobs list --output json | grep -A2 "DQ Rule Generation"
+databricks jobs list --output json | grep -A2 "DQ Rule"
 ```
 
 Edit `app.yaml`:
 ```yaml
 env:
   - name: DQ_GENERATION_JOB_ID
-    value: "<your-job-id>"
+    value: "<generation-job-id>"
+
+  - name: DQ_VALIDATION_JOB_ID
+    value: "<validation-job-id>"
 
   - name: LAKEBASE_HOST              # Optional
     value: "<your-lakebase-host>"
@@ -102,7 +105,8 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 ```bash
 export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="your-token"
-export DQ_GENERATION_JOB_ID="your-job-id"
+export DQ_GENERATION_JOB_ID="your-generation-job-id"
+export DQ_VALIDATION_JOB_ID="your-validation-job-id"
 
 python wsgi.py
 ```
