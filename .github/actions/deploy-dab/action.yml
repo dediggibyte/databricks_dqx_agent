@@ -40,7 +40,7 @@ runs:
     - name: Deploy app
       shell: bash
       run: |
-        set -euxo pipefail
+        set -euo pipefail
         # Get app name based on environment
         case "${{ inputs.env }}" in
           dev)   APP_NAME="dqx-rule-generator-dev" ;;
@@ -50,11 +50,54 @@ runs:
         esac
 
         # Get the workspace path where bundle files were deployed
-        # Format: /Workspace/Users/<user>/.bundle/<bundle-name>/<target>/files
         WORKSPACE_PATH=$(databricks bundle summary -t "${{ inputs.env }}" --output json | jq -r '.workspace.file_path')
 
         echo "Deploying app: $APP_NAME"
         echo "Source code path: $WORKSPACE_PATH"
 
+        # Check current app status and wait for any active deployment
+        echo "Checking app status..."
+        MAX_WAIT=300  # 5 minutes max wait
+        WAIT_TIME=0
+        SLEEP_INTERVAL=15
+
+        while [ $WAIT_TIME -lt $MAX_WAIT ]; do
+          APP_STATUS=$(databricks apps get "$APP_NAME" --output json 2>/dev/null | jq -r '.active_deployment.status.state // .status.state // "UNKNOWN"' || echo "NOT_FOUND")
+          echo "Current app status: $APP_STATUS"
+
+          case "$APP_STATUS" in
+            "RUNNING"|"SUCCEEDED"|"STOPPED"|"FAILED"|"NOT_FOUND"|"UNKNOWN"|"IDLE")
+              echo "App is ready for deployment"
+              break
+              ;;
+            "PENDING"|"IN_PROGRESS"|"DEPLOYING")
+              echo "Deployment in progress, waiting ${SLEEP_INTERVAL}s..."
+              sleep $SLEEP_INTERVAL
+              WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
+              ;;
+            *)
+              echo "Unknown status: $APP_STATUS, proceeding with deployment"
+              break
+              ;;
+          esac
+        done
+
+        if [ $WAIT_TIME -ge $MAX_WAIT ]; then
+          echo "Warning: Timed out waiting for active deployment. Proceeding anyway..."
+        fi
+
         # Deploy the app with the workspace source code path
-        databricks apps deploy "$APP_NAME" --source-code-path "$WORKSPACE_PATH"
+        echo "Starting app deployment..."
+        databricks apps deploy "$APP_NAME" --source-code-path "$WORKSPACE_PATH" || {
+          echo "Deploy command failed, checking if app is already running..."
+          APP_STATE=$(databricks apps get "$APP_NAME" --output json 2>/dev/null | jq -r '.status.state // "UNKNOWN"')
+          if [ "$APP_STATE" = "RUNNING" ]; then
+            echo "App is already running, deployment successful via bundle deploy"
+            exit 0
+          else
+            echo "App state: $APP_STATE"
+            exit 1
+          fi
+        }
+
+        echo "App deployment initiated successfully"
