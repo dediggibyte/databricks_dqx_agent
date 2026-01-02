@@ -19,6 +19,10 @@ inputs:
     description: "Model serving endpoint for AI analysis"
     required: false
     default: "databricks-claude-sonnet-4-5"
+  unity-catalog-access:
+    description: "Comma-separated list of catalogs to grant access (e.g., 'catalog1,catalog2')"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -53,12 +57,19 @@ runs:
         echo "Generation Job ID: $GENERATION_JOB_ID"
         echo "Validation Job ID: $VALIDATION_JOB_ID"
 
-        # Start building env section
-        echo "" >> app.yaml
-        echo "# Environment variables injected by CI/CD" >> app.yaml
-
-        # Remove the empty env array and add populated one
-        sed -i 's/env: \[\]/env:/' app.yaml
+        # Regenerate app.yaml with proper structure
+        printf '%s\n' \
+          'command:' \
+          '  - gunicorn' \
+          '  - --bind' \
+          '  - 0.0.0.0:8000' \
+          '  - --workers' \
+          '  - "2"' \
+          '  - --timeout' \
+          '  - "300"' \
+          '  - wsgi:app' \
+          '' \
+          'env:' > app.yaml
 
         # Add job IDs
         if [ -n "$GENERATION_JOB_ID" ]; then
