@@ -10,11 +10,13 @@ targets:
 
       # Generation Job Configuration
       job_name: "DQ Rule Generation - Dev"
-      notebook_path: "/Workspace/Users/<your-email>/databricks_dqx_agent/notebooks/generate_dq_rules_fast"
+      # Use bundle's deployed path - notebooks are synced to workspace.root_path
+      notebook_path: "${workspace.root_path}/notebooks/generate_dq_rules_fast"
 
       # Validation Job Configuration
       validation_job_name: "DQ Rule Validation - Dev"
-      validation_notebook_path: "/Workspace/Users/<your-email>/databricks_dqx_agent/notebooks/validate_dq_rules"
+      # Use bundle's deployed path - notebooks are synced to workspace.root_path
+      validation_notebook_path: "${workspace.root_path}/notebooks/validate_dq_rules"
 
       # Note: sql_warehouse_id is passed via --var from CI/CD secrets
       # App environment variables (LAKEBASE_*, MODEL_SERVING_ENDPOINT, SAMPLE_DATA_LIMIT)
