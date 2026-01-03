@@ -108,6 +108,43 @@ runs:
         set -euxo pipefail
         databricks bundle deploy -t "${{ inputs.env }}"
 
+    - name: Grant job permissions to app service principal
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Get bundle summary with app SP and job IDs
+        BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" --output json)
+
+        APP_SP=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.service_principal_name // empty')
+        GENERATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_generation.id // empty')
+        VALIDATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_validation.id // empty')
+
+        if [ -z "$APP_SP" ]; then
+          echo "Warning: Could not get app service principal name from bundle"
+          exit 0
+        fi
+
+        echo "Granting job permissions to app service principal: $APP_SP"
+
+        # Grant CAN_MANAGE_RUN on generation job
+        if [ -n "$GENERATION_JOB_ID" ]; then
+          echo "Granting CAN_MANAGE_RUN on generation job ($GENERATION_JOB_ID)..."
+          databricks permissions update job "$GENERATION_JOB_ID" \
+            --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP\", \"permission_level\": \"CAN_MANAGE_RUN\"}]}" \
+            || echo "Warning: Failed to grant permissions on generation job"
+        fi
+
+        # Grant CAN_MANAGE_RUN on validation job
+        if [ -n "$VALIDATION_JOB_ID" ]; then
+          echo "Granting CAN_MANAGE_RUN on validation job ($VALIDATION_JOB_ID)..."
+          databricks permissions update job "$VALIDATION_JOB_ID" \
+            --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP\", \"permission_level\": \"CAN_MANAGE_RUN\"}]}" \
+            || echo "Warning: Failed to grant permissions on validation job"
+        fi
+
+        echo "Job permissions granted successfully"
+
     - name: Grant Unity Catalog permissions to app
       if: ${{ inputs.source-catalogs != '' }}
       shell: bash
