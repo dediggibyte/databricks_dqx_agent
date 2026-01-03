@@ -1,10 +1,14 @@
 # DQ Rule Validation Job Definition (Serverless)
-# Note: Job permissions for app SP are granted via CI/CD after app deployment
 
 resources:
   jobs:
     dq_rule_validation:
       name: ${var.validation_job_name}
+
+      # Grant app service principal permission to run this job
+      permissions:
+        - service_principal_name: ${resources.apps.dqx_app.service_principal_client_id}
+          level: CAN_MANAGE_RUN
 
       tasks:
         - task_key: validate
