@@ -48,3 +48,4 @@ jobs:
           lakebase-host: ${{ secrets.LAKEBASE_HOST }}
           lakebase-database: ${{ secrets.LAKEBASE_DATABASE }}
           model-serving-endpoint: ${{ secrets.MODEL_SERVING_ENDPOINT }}
+          sql-warehouse-id: ${{ secrets.SQL_WAREHOUSE_ID }}
