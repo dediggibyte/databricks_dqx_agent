@@ -16,7 +16,6 @@ targets:
       validation_job_name: "DQ Rule Validation - Dev"
       validation_notebook_path: "/Workspace/Users/<your-email>/databricks_dqx_agent/notebooks/validate_dq_rules"
 
-      # App Environment Configuration
-      sample_data_limit: "100"
-      lakebase_database: "databricks_postgres"
-      model_serving_endpoint: "databricks-claude-sonnet-4-5"
+      # Note: sql_warehouse_id is passed via --var from CI/CD secrets
+      # App environment variables (LAKEBASE_*, MODEL_SERVING_ENDPOINT, SAMPLE_DATA_LIMIT)
+      # are configured in app.yaml via CI/CD, not as DAB variables

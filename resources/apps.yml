@@ -28,6 +28,13 @@ resources:
 
       # Resources the app can access
       resources:
+        # SQL Warehouse for executing queries (user authorization)
+        - name: "dqx-sql-warehouse"
+          description: "SQL Warehouse for executing Unity Catalog queries"
+          sql_warehouse:
+            id: ${var.sql_warehouse_id}
+            permission: "CAN_USE"
+
         # Grant app permission to run the DQ generation job
         - name: "dqx-generation-job"
           description: "Job for generating DQ rules using AI"

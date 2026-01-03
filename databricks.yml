@@ -41,6 +41,8 @@ bundle:
   name: dqx-rule-generator
 
 # Variable declarations (values set per-target in environments/<env>/variables.yml)
+# Note: App environment variables (LAKEBASE_*, MODEL_SERVING_ENDPOINT, etc.)
+#       are passed via GitHub secrets in CI/CD, not as DAB variables.
 variables:
   app_name:
     description: "Name of the Databricks App"
@@ -54,15 +56,8 @@ variables:
     description: "Name of the DQ rule validation job"
   validation_notebook_path:
     description: "Path to the DQ rule validation notebook"
-  sample_data_limit:
-    description: "Maximum rows to sample for data preview"
-    default: "100"
-  lakebase_database:
-    description: "Lakebase database name"
-    default: "databricks_postgres"
-  model_serving_endpoint:
-    description: "Model serving endpoint for AI analysis"
-    default: "databricks-claude-sonnet-4-5"
+  sql_warehouse_id:
+    description: "SQL Warehouse ID for app to execute queries"
 
 # Include modular configuration files
 include:

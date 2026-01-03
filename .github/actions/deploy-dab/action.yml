@@ -14,11 +14,14 @@ inputs:
   lakebase-database:
     description: "Lakebase database name"
     required: false
-    default: "databricks_postgres"
+    default: ""
   model-serving-endpoint:
     description: "Model serving endpoint for AI analysis"
     required: false
-    default: "databricks-claude-sonnet-4-5"
+    default: ""
+  sql-warehouse-id:
+    description: "SQL Warehouse ID for app to execute queries"
+    required: true
 runs:
   using: "composite"
   steps:
@@ -26,13 +29,15 @@ runs:
       shell: bash
       run: |
         set -euxo pipefail
-        databricks bundle validate -t "${{ inputs.env }}"
+        databricks bundle validate -t "${{ inputs.env }}" \
+          --var "sql_warehouse_id=${{ inputs.sql-warehouse-id }}"
 
-    - name: Deploy bundle (first pass - creates jobs)
+    - name: Deploy bundle (first pass - creates jobs and app)
       shell: bash
       run: |
         set -euxo pipefail
-        databricks bundle deploy -t "${{ inputs.env }}"
+        databricks bundle deploy -t "${{ inputs.env }}" \
+          --var "sql_warehouse_id=${{ inputs.sql-warehouse-id }}"
 
     - name: Configure app.yaml with job IDs and secrets
       shell: bash
@@ -40,12 +45,14 @@ runs:
         LAKEBASE_HOST_VALUE: ${{ inputs.lakebase-host }}
         LAKEBASE_DATABASE_VALUE: ${{ inputs.lakebase-database }}
         MODEL_SERVING_ENDPOINT_VALUE: ${{ inputs.model-serving-endpoint }}
+        SQL_WAREHOUSE_ID_VALUE: ${{ inputs.sql-warehouse-id }}
       run: |
         set -euo pipefail
 
         # Get job IDs from deployed bundle
         echo "Getting job IDs from bundle summary..."
-        BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" --output json)
+        BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" \
+          --var "sql_warehouse_id=$SQL_WAREHOUSE_ID_VALUE" --output json)
 
         GENERATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_generation.id // empty')
         VALIDATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_validation.id // empty')
@@ -100,14 +107,20 @@ runs:
 
     - name: Deploy bundle (second pass - updates app with config)
       shell: bash
+      env:
+        SQL_WAREHOUSE_ID_VALUE: ${{ inputs.sql-warehouse-id }}
       run: |
         set -euxo pipefail
-        databricks bundle deploy -t "${{ inputs.env }}"
+        databricks bundle deploy -t "${{ inputs.env }}" \
+          --var "sql_warehouse_id=$SQL_WAREHOUSE_ID_VALUE"
 
     - name: Run app (deploy and start)
       shell: bash
+      env:
+        SQL_WAREHOUSE_ID_VALUE: ${{ inputs.sql-warehouse-id }}
       run: |
         set -euxo pipefail
         echo "Starting app deployment via bundle run..."
-        databricks bundle run dqx_app -t "${{ inputs.env }}"
+        databricks bundle run dqx_app -t "${{ inputs.env }}" \
+          --var "sql_warehouse_id=$SQL_WAREHOUSE_ID_VALUE"
         echo "App deployment initiated successfully"
