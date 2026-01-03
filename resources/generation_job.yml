@@ -5,6 +5,11 @@ resources:
     dq_rule_generation:
       name: ${var.job_name}
 
+      # Grant the app's service principal permission to run this job
+      permissions:
+        - service_principal_name: ${resources.apps.dqx_app.service_principal_name}
+          level: CAN_MANAGE_RUN
+
       tasks:
         - task_key: generate
           notebook_task:
