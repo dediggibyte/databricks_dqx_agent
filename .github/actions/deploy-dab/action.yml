@@ -39,6 +39,38 @@ runs:
         databricks bundle deploy -t "${{ inputs.env }}" \
           --var "sql_warehouse_id=${{ inputs.sql-warehouse-id }}"
 
+    - name: Grant job permissions to app service principal
+      shell: bash
+      env:
+        SQL_WAREHOUSE_ID_VALUE: ${{ inputs.sql-warehouse-id }}
+      run: |
+        set -euo pipefail
+
+        echo "Getting app and job info from bundle summary..."
+        BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" \
+          --var "sql_warehouse_id=$SQL_WAREHOUSE_ID_VALUE" --output json)
+
+        # Get app service principal ID
+        APP_SP_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.service_principal_id // empty')
+        GENERATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_generation.id // empty')
+        VALIDATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_validation.id // empty')
+
+        echo "App Service Principal ID: $APP_SP_ID"
+        echo "Generation Job ID: $GENERATION_JOB_ID"
+        echo "Validation Job ID: $VALIDATION_JOB_ID"
+
+        if [ -n "$APP_SP_ID" ] && [ -n "$GENERATION_JOB_ID" ]; then
+          echo "Granting CAN_MANAGE_RUN permission on generation job to app SP..."
+          databricks permissions update jobs "$GENERATION_JOB_ID" \
+            --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP_ID\", \"permission_level\": \"CAN_MANAGE_RUN\"}]}" || echo "Warning: Could not update generation job permissions"
+        fi
+
+        if [ -n "$APP_SP_ID" ] && [ -n "$VALIDATION_JOB_ID" ]; then
+          echo "Granting CAN_MANAGE_RUN permission on validation job to app SP..."
+          databricks permissions update jobs "$VALIDATION_JOB_ID" \
+            --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP_ID\", \"permission_level\": \"CAN_MANAGE_RUN\"}]}" || echo "Warning: Could not update validation job permissions"
+        fi
+
     - name: Configure app.yaml with job IDs and secrets
       shell: bash
       env:
