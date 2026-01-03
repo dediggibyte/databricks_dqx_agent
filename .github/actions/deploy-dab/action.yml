@@ -19,6 +19,10 @@ inputs:
     description: "Model serving endpoint for AI analysis"
     required: false
     default: "databricks-claude-sonnet-4-5"
+  source-catalogs:
+    description: "Comma-separated list of catalogs to grant app access to"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -103,6 +107,42 @@ runs:
       run: |
         set -euxo pipefail
         databricks bundle deploy -t "${{ inputs.env }}"
+
+    - name: Grant Unity Catalog permissions to app
+      if: ${{ inputs.source-catalogs != '' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Get app service principal from bundle summary
+        BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" --output json)
+        APP_SP=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.service_principal_name // empty')
+
+        if [ -z "$APP_SP" ]; then
+          echo "Warning: Could not get app service principal name from bundle"
+          exit 0
+        fi
+
+        echo "Granting catalog access to app service principal: $APP_SP"
+
+        # Parse comma-separated catalogs and grant access to each
+        IFS=',' read -ra CATALOGS <<< "${{ inputs.source-catalogs }}"
+        for catalog in "${CATALOGS[@]}"; do
+          # Trim whitespace
+          catalog=$(echo "$catalog" | xargs)
+          if [ -n "$catalog" ]; then
+            echo "Granting access to catalog: $catalog"
+
+            # Grant USE CATALOG, USE SCHEMA on all schemas, and SELECT on all tables
+            databricks sql-exec -e "GRANT USE CATALOG ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant USE CATALOG on $catalog"
+            databricks sql-exec -e "GRANT USE SCHEMA ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant USE SCHEMA on $catalog"
+            databricks sql-exec -e "GRANT SELECT ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant SELECT on $catalog"
+
+            echo "Granted access to catalog: $catalog"
+          fi
+        done
+
+        echo "Unity Catalog permissions granted successfully"
 
     - name: Run app (deploy and start)
       shell: bash
