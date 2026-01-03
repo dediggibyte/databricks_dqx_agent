@@ -1,8 +1,12 @@
 """
 Databricks SDK service for Unity Catalog and Job operations.
+
+Uses user authorization - the app acts on behalf of the logged-in user
+using their access token forwarded via x-forwarded-access-token header.
 """
 import json
 from typing import Optional, List, Dict, Any
+from flask import request, has_request_context
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import RunLifeCycleState, RunResultState
 
@@ -10,33 +14,44 @@ from ..config import Config
 
 
 class DatabricksService:
-    """Service for Databricks SDK operations."""
+    """Service for Databricks SDK operations using user authorization."""
 
-    _instance: Optional['DatabricksService'] = None
-    _client: Optional[WorkspaceClient] = None
+    def _get_user_token(self) -> Optional[str]:
+        """Get user's access token from request headers."""
+        if has_request_context():
+            return request.headers.get('x-forwarded-access-token')
+        return None
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    def _get_client(self, use_user_token: bool = True) -> WorkspaceClient:
+        """Get WorkspaceClient with user's token or default auth.
 
-    @property
-    def client(self) -> WorkspaceClient:
-        """Get or create WorkspaceClient."""
-        if self._client is None:
-            if Config.DATABRICKS_HOST and Config.DATABRICKS_TOKEN:
-                self._client = WorkspaceClient(
-                    host=Config.DATABRICKS_HOST,
-                    token=Config.DATABRICKS_TOKEN
-                )
-            else:
-                self._client = WorkspaceClient()
-        return self._client
+        Args:
+            use_user_token: If True, use user's forwarded token for user authorization.
+                          If False, use default app authentication.
+        """
+        user_token = self._get_user_token() if use_user_token else None
+
+        if user_token:
+            # User authorization: use the logged-in user's token
+            return WorkspaceClient(
+                host=Config.DATABRICKS_HOST,
+                token=user_token
+            )
+        elif Config.DATABRICKS_HOST and Config.DATABRICKS_TOKEN:
+            # Fallback to explicit token config (for local dev)
+            return WorkspaceClient(
+                host=Config.DATABRICKS_HOST,
+                token=Config.DATABRICKS_TOKEN
+            )
+        else:
+            # Default authentication (app service principal)
+            return WorkspaceClient()
 
     def get_sql_warehouse_id(self) -> Optional[str]:
         """Get a SQL warehouse ID for executing queries."""
         try:
-            warehouses = list(self.client.warehouses.list())
+            client = self._get_client()
+            warehouses = list(client.warehouses.list())
             for wh in warehouses:
                 if wh.state and wh.state.value == "RUNNING":
                     return wh.id
@@ -48,11 +63,12 @@ class DatabricksService:
 
     def execute_sql(self, statement: str) -> List[Any]:
         """Execute SQL using Statement Execution API."""
+        client = self._get_client()
         warehouse_id = self.get_sql_warehouse_id()
         if not warehouse_id:
             raise Exception("No SQL warehouse available")
 
-        response = self.client.statement_execution.execute_statement(
+        response = client.statement_execution.execute_statement(
             warehouse_id=warehouse_id,
             statement=statement,
             wait_timeout="30s"
@@ -67,39 +83,42 @@ class DatabricksService:
     # ============================================================
 
     def get_catalogs(self) -> List[str]:
-        """Get list of available catalogs."""
+        """Get list of available catalogs (uses user's permissions)."""
         try:
             catalogs = self.execute_sql("SHOW CATALOGS")
             return catalogs if catalogs else ["main"]
         except Exception as e:
             print(f"Error listing catalogs: {e}")
             try:
-                catalogs = list(self.client.catalogs.list())
+                client = self._get_client()
+                catalogs = list(client.catalogs.list())
                 return [c.name for c in catalogs if c.name]
             except:
                 return ["main"]
 
     def get_schemas(self, catalog: str) -> List[str]:
-        """Get list of schemas in a catalog."""
+        """Get list of schemas in a catalog (uses user's permissions)."""
         try:
             schemas = self.execute_sql(f"SHOW SCHEMAS IN `{catalog}`")
             return schemas if schemas else ["default"]
         except Exception as e:
             print(f"Error listing schemas: {e}")
             try:
-                schemas = list(self.client.schemas.list(catalog_name=catalog))
+                client = self._get_client()
+                schemas = list(client.schemas.list(catalog_name=catalog))
                 return [s.name for s in schemas if s.name]
             except:
                 return ["default"]
 
     def get_tables(self, catalog: str, schema: str) -> List[str]:
-        """Get list of tables in a schema."""
+        """Get list of tables in a schema (uses user's permissions)."""
         try:
+            client = self._get_client()
             warehouse_id = self.get_sql_warehouse_id()
             if not warehouse_id:
                 raise Exception("No SQL warehouse available")
 
-            response = self.client.statement_execution.execute_statement(
+            response = client.statement_execution.execute_statement(
                 warehouse_id=warehouse_id,
                 statement=f"SHOW TABLES IN `{catalog}`.`{schema}`",
                 wait_timeout="30s"
@@ -111,16 +130,18 @@ class DatabricksService:
         except Exception as e:
             print(f"Error listing tables: {e}")
             try:
-                tables = list(self.client.tables.list(catalog_name=catalog, schema_name=schema))
+                client = self._get_client()
+                tables = list(client.tables.list(catalog_name=catalog, schema_name=schema))
                 return [t.name for t in tables if t.name]
             except:
                 return []
 
     def get_table_sample(self, full_table_name: str, limit: int = 100) -> Dict[str, Any]:
-        """Get sample data from a table."""
+        """Get sample data from a table (uses user's permissions)."""
         try:
+            client = self._get_client()
             warehouse_id = self.get_sql_warehouse_id()
-            response = self.client.statement_execution.execute_statement(
+            response = client.statement_execution.execute_statement(
                 warehouse_id=warehouse_id,
                 statement=f"SELECT * FROM {full_table_name} LIMIT {limit}",
                 wait_timeout="30s"
@@ -144,7 +165,7 @@ class DatabricksService:
     # ============================================================
 
     def trigger_dq_job(self, table_name: str, user_prompt: str, sample_limit: Optional[int] = None) -> Dict[str, Any]:
-        """Trigger the DQ rule generation job.
+        """Trigger the DQ rule generation job (uses user's permissions).
 
         Args:
             table_name: Full table name (catalog.schema.table)
@@ -155,6 +176,7 @@ class DatabricksService:
             return {"error": "DQ_GENERATION_JOB_ID not configured"}
 
         try:
+            client = self._get_client()
             job_parameters = {
                 "table_name": table_name,
                 "user_prompt": user_prompt
@@ -164,7 +186,7 @@ class DatabricksService:
             if sample_limit is not None:
                 job_parameters["sample_limit"] = str(sample_limit)
 
-            response = self.client.jobs.run_now(
+            response = client.jobs.run_now(
                 job_id=int(Config.DQ_GENERATION_JOB_ID),
                 job_parameters=job_parameters
             )
@@ -173,12 +195,13 @@ class DatabricksService:
             return {"error": str(e)}
 
     def trigger_validation_job(self, table_name: str, rules: List[Dict]) -> Dict[str, Any]:
-        """Trigger the DQ rule validation job."""
+        """Trigger the DQ rule validation job (uses user's permissions)."""
         if not Config.DQ_VALIDATION_JOB_ID:
             return {"error": "DQ_VALIDATION_JOB_ID not configured"}
 
         try:
-            response = self.client.jobs.run_now(
+            client = self._get_client()
+            response = client.jobs.run_now(
                 job_id=int(Config.DQ_VALIDATION_JOB_ID),
                 job_parameters={
                     "table_name": table_name,
@@ -190,14 +213,15 @@ class DatabricksService:
             return {"error": str(e)}
 
     def get_job_status(self, run_id: int) -> Dict[str, Any]:
-        """Get job run status."""
+        """Get job run status (uses user's permissions)."""
         try:
-            run = self.client.jobs.get_run(run_id=run_id)
+            client = self._get_client()
+            run = client.jobs.get_run(run_id=run_id)
             state = run.state
 
             if state.life_cycle_state == RunLifeCycleState.TERMINATED:
                 if state.result_state == RunResultState.SUCCESS:
-                    result = self._get_job_output(run)
+                    result = self._get_job_output(run, client)
                     return {"status": "completed", "result": result}
                 else:
                     return {"status": "failed", "message": state.state_message}
@@ -211,7 +235,7 @@ class DatabricksService:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
-    def _get_job_output(self, run) -> Optional[Any]:
+    def _get_job_output(self, run, client: WorkspaceClient) -> Optional[Any]:
         """Extract output from a completed job run."""
         result = None
 
@@ -219,7 +243,7 @@ class DatabricksService:
             for task in run.tasks:
                 if task.run_id:
                     try:
-                        task_output = self.client.jobs.get_run_output(run_id=task.run_id)
+                        task_output = client.jobs.get_run_output(run_id=task.run_id)
                         if task_output.notebook_output and task_output.notebook_output.result:
                             try:
                                 result = json.loads(task_output.notebook_output.result)
@@ -231,7 +255,7 @@ class DatabricksService:
                         continue
         else:
             try:
-                output = self.client.jobs.get_run_output(run_id=run.run_id)
+                output = client.jobs.get_run_output(run_id=run.run_id)
                 if output.notebook_output and output.notebook_output.result:
                     try:
                         result = json.loads(output.notebook_output.result)
@@ -243,5 +267,5 @@ class DatabricksService:
         return result
 
 
-# Singleton instance
+# Service instance (no longer singleton since each request uses different user token)
 databricks_service = DatabricksService()
