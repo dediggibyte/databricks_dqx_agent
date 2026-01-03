@@ -23,6 +23,10 @@ inputs:
     description: "Comma-separated list of catalogs to grant app access to"
     required: false
     default: ""
+  warehouse-id:
+    description: "SQL Warehouse ID for executing Unity Catalog grants"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -142,7 +146,7 @@ runs:
         # Grant CAN_MANAGE_RUN on generation job
         if [ -n "$GENERATION_JOB_ID" ]; then
           echo "Granting CAN_MANAGE_RUN on generation job ($GENERATION_JOB_ID)..."
-          databricks permissions update job "$GENERATION_JOB_ID" \
+          databricks permissions update jobs "$GENERATION_JOB_ID" \
             --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP\", \"permission_level\": \"CAN_MANAGE_RUN\"}]}" \
             || echo "Warning: Failed to grant permissions on generation job"
         fi
@@ -150,7 +154,7 @@ runs:
         # Grant CAN_MANAGE_RUN on validation job
         if [ -n "$VALIDATION_JOB_ID" ]; then
           echo "Granting CAN_MANAGE_RUN on validation job ($VALIDATION_JOB_ID)..."
-          databricks permissions update job "$VALIDATION_JOB_ID" \
+          databricks permissions update jobs "$VALIDATION_JOB_ID" \
             --json "{\"access_control_list\": [{\"service_principal_name\": \"$APP_SP\", \"permission_level\": \"CAN_MANAGE_RUN\"}]}" \
             || echo "Warning: Failed to grant permissions on validation job"
         fi
@@ -160,6 +164,8 @@ runs:
     - name: Grant Unity Catalog permissions to app
       if: ${{ inputs.source-catalogs != '' }}
       shell: bash
+      env:
+        WAREHOUSE_ID: ${{ inputs.warehouse-id }}
       run: |
         set -euo pipefail
 
@@ -184,7 +190,23 @@ runs:
           exit 0
         fi
 
+        # Check if warehouse ID is provided
+        if [ -z "$WAREHOUSE_ID" ]; then
+          echo "Warning: No SQL warehouse ID provided. Skipping Unity Catalog grants."
+          echo "Set the WAREHOUSE_ID secret to enable catalog permission grants."
+          exit 0
+        fi
+
         echo "Granting catalog access to app service principal: $APP_SP"
+
+        # Function to execute SQL statement
+        execute_sql() {
+          local sql="$1"
+          echo "Executing: $sql"
+          databricks api post /api/2.0/sql/statements \
+            --json "{\"warehouse_id\": \"$WAREHOUSE_ID\", \"statement\": \"$sql\", \"wait_timeout\": \"30s\"}" \
+            2>/dev/null || return 1
+        }
 
         # Parse comma-separated catalogs and grant access to each
         IFS=',' read -ra CATALOGS <<< "${{ inputs.source-catalogs }}"
@@ -195,9 +217,9 @@ runs:
             echo "Granting access to catalog: $catalog"
 
             # Grant USE CATALOG, USE SCHEMA on all schemas, and SELECT on all tables
-            databricks sql-exec -e "GRANT USE CATALOG ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant USE CATALOG on $catalog"
-            databricks sql-exec -e "GRANT USE SCHEMA ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant USE SCHEMA on $catalog"
-            databricks sql-exec -e "GRANT SELECT ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant SELECT on $catalog"
+            execute_sql "GRANT USE CATALOG ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant USE CATALOG on $catalog"
+            execute_sql "GRANT USE SCHEMA ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant USE SCHEMA on $catalog"
+            execute_sql "GRANT SELECT ON CATALOG \`$catalog\` TO \`$APP_SP\`" || echo "Warning: Failed to grant SELECT on $catalog"
 
             echo "Granted access to catalog: $catalog"
           fi
