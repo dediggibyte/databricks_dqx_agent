@@ -113,15 +113,27 @@ runs:
       run: |
         set -euo pipefail
 
-        # Get bundle summary with app SP and job IDs
+        # Get bundle summary for job IDs and app name
         BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" --output json)
 
-        APP_SP=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.service_principal_name // empty')
+        APP_NAME=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.name // empty')
         GENERATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_generation.id // empty')
         VALIDATION_JOB_ID=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.jobs.dq_rule_validation.id // empty')
 
+        if [ -z "$APP_NAME" ]; then
+          echo "Warning: Could not get app name from bundle"
+          exit 0
+        fi
+
+        echo "Getting service principal for app: $APP_NAME"
+
+        # Get app details to find the service principal
+        APP_DETAILS=$(databricks apps get "$APP_NAME" --output json 2>/dev/null || echo "{}")
+        APP_SP=$(echo "$APP_DETAILS" | jq -r '.service_principal_name // .effective_service_principal_name // empty')
+
         if [ -z "$APP_SP" ]; then
-          echo "Warning: Could not get app service principal name from bundle"
+          echo "Warning: Could not get app service principal name"
+          echo "App details: $APP_DETAILS"
           exit 0
         fi
 
@@ -151,12 +163,24 @@ runs:
       run: |
         set -euo pipefail
 
-        # Get app service principal from bundle summary
+        # Get app name from bundle summary
         BUNDLE_SUMMARY=$(databricks bundle summary -t "${{ inputs.env }}" --output json)
-        APP_SP=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.service_principal_name // empty')
+        APP_NAME=$(echo "$BUNDLE_SUMMARY" | jq -r '.resources.apps.dqx_app.name // empty')
+
+        if [ -z "$APP_NAME" ]; then
+          echo "Warning: Could not get app name from bundle"
+          exit 0
+        fi
+
+        echo "Getting service principal for app: $APP_NAME"
+
+        # Get app details to find the service principal
+        APP_DETAILS=$(databricks apps get "$APP_NAME" --output json 2>/dev/null || echo "{}")
+        APP_SP=$(echo "$APP_DETAILS" | jq -r '.service_principal_name // .effective_service_principal_name // empty')
 
         if [ -z "$APP_SP" ]; then
-          echo "Warning: Could not get app service principal name from bundle"
+          echo "Warning: Could not get app service principal name"
+          echo "App details: $APP_DETAILS"
           exit 0
         fi
 
