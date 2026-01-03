@@ -22,12 +22,27 @@ class DatabricksService:
     """Service for Databricks SDK operations using user authorization."""
 
     def __init__(self):
-        """Initialize the service with SDK config for host detection."""
-        self._sdk_config = SdkConfig()
+        """Initialize the service."""
+        self._sdk_config = None
+
+    def _get_sdk_config(self) -> Optional[SdkConfig]:
+        """Lazily get SDK config (only when running in Databricks environment)."""
+        if self._sdk_config is None:
+            try:
+                self._sdk_config = SdkConfig()
+            except Exception as e:
+                print(f"[DEBUG] Could not initialize SDK config: {e}")
+                return None
+        return self._sdk_config
 
     def _get_host(self) -> str:
         """Get Databricks host from config or environment."""
-        return Config.DATABRICKS_HOST or os.getenv("DATABRICKS_HOST") or self._sdk_config.host
+        host = Config.DATABRICKS_HOST or os.getenv("DATABRICKS_HOST")
+        if not host:
+            sdk_config = self._get_sdk_config()
+            if sdk_config:
+                host = sdk_config.host
+        return host
 
     def _get_user_token(self) -> Optional[str]:
         """Get user's access token from request headers."""
@@ -85,12 +100,16 @@ class DatabricksService:
             )
         else:
             # Use service principal credentials
-            print(f"[DEBUG] Creating SQL connection with SP credentials, host={host}")
-            return sql.connect(
-                server_hostname=host,
-                http_path=http_path,
-                credentials_provider=lambda: self._sdk_config.authenticate
-            )
+            sdk_config = self._get_sdk_config()
+            if sdk_config:
+                print(f"[DEBUG] Creating SQL connection with SP credentials, host={host}")
+                return sql.connect(
+                    server_hostname=host,
+                    http_path=http_path,
+                    credentials_provider=lambda: sdk_config.authenticate
+                )
+            else:
+                raise Exception("No authentication method available (no user token, no configured token, no SP credentials)")
 
     def _get_client(self, use_user_token: bool = True) -> WorkspaceClient:
         """Get WorkspaceClient with user's token or default auth.
