@@ -20,6 +20,12 @@ resources:
       # Source code location - the src/ folder contains all app files
       source_code_path: ../src
 
+      # User API scopes - required for OBO (On-Behalf-Of) authentication
+      # These scopes are requested when the user logs into the app
+      # See: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth
+      user_api_scopes:
+        - sql
+
       # Resources the app can access
       resources:
         # SQL Warehouse for executing queries (user authorization)
