@@ -23,9 +23,9 @@ resources:
       # User API scopes - required for OBO (On-Behalf-Of) authentication
       # These scopes are requested when the user logs into the app
       # See: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth
+      # Note: Only sql scope is used for OBO; job operations use app SP credentials
       user_api_scopes:
         - sql
-        - jobs
 
       # Resources the app can access
       resources:
