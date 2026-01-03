@@ -20,9 +20,9 @@ resources:
       # Source code location - the src/ folder contains all app files
       source_code_path: ../src
 
-      # User authorization - app acts on behalf of logged-in user
+      # User API scopes - app acts on behalf of logged-in user
       # Users will only see catalogs/schemas/tables they have access to
-      user_authorization:
+      user_api_scopes:
         # SQL scope for executing queries on SQL warehouses
         - "sql"
 
