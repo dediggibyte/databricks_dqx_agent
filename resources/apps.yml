@@ -25,6 +25,7 @@ resources:
       # See: https://docs.databricks.com/aws/en/dev-tools/databricks-apps/auth
       user_api_scopes:
         - sql
+        - jobs
 
       # Resources the app can access
       resources:
