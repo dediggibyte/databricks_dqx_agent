@@ -19,7 +19,13 @@ class DatabricksService:
     def _get_user_token(self) -> Optional[str]:
         """Get user's access token from request headers."""
         if has_request_context():
-            return request.headers.get('x-forwarded-access-token')
+            token = request.headers.get('x-forwarded-access-token')
+            if token:
+                print(f"[DEBUG] User token found (length: {len(token)})")
+            else:
+                print("[DEBUG] No user token in x-forwarded-access-token header")
+            return token
+        print("[DEBUG] No request context available")
         return None
 
     def _get_client(self, use_user_token: bool = True) -> WorkspaceClient:
@@ -33,10 +39,15 @@ class DatabricksService:
 
         if user_token:
             # User authorization: use the logged-in user's token
-            return WorkspaceClient(
-                host=Config.DATABRICKS_HOST,
-                token=user_token
-            )
+            # Host is auto-detected in Databricks Apps environment
+            if Config.DATABRICKS_HOST:
+                return WorkspaceClient(
+                    host=Config.DATABRICKS_HOST,
+                    token=user_token
+                )
+            else:
+                # Let SDK auto-detect host when running in Databricks Apps
+                return WorkspaceClient(token=user_token)
         elif Config.DATABRICKS_HOST and Config.DATABRICKS_TOKEN:
             # Fallback to explicit token config (for local dev)
             return WorkspaceClient(
