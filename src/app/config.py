@@ -29,6 +29,9 @@ class Config:
     # AI Model Serving
     MODEL_SERVING_ENDPOINT = os.getenv("MODEL_SERVING_ENDPOINT", "databricks-claude-sonnet-4-5")
 
+    # SQL Warehouse
+    SQL_WAREHOUSE_ID = os.getenv("SQL_WAREHOUSE_ID")
+
     # Databricks SDK
     DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
     DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")

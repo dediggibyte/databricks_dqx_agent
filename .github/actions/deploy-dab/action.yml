@@ -102,6 +102,12 @@ runs:
           echo "    value: \"$MODEL_SERVING_ENDPOINT_VALUE\"" >> src/app.yaml
         fi
 
+        # Add SQL Warehouse ID
+        if [ -n "$SQL_WAREHOUSE_ID_VALUE" ]; then
+          echo "  - name: SQL_WAREHOUSE_ID" >> src/app.yaml
+          echo "    value: \"$SQL_WAREHOUSE_ID_VALUE\"" >> src/app.yaml
+        fi
+
         echo "src/app.yaml configured:"
         cat src/app.yaml
 
