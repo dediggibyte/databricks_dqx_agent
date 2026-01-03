@@ -223,16 +223,20 @@ class DatabricksService:
             return {"columns": [], "rows": [], "row_count": 0, "error": str(e)}
 
     # ============================================================
-    # Job Operations (using WorkspaceClient)
+    # Job Operations (using WorkspaceClient with App SP credentials)
+    # Note: Jobs use app service principal, not user token, because
+    # there's no "jobs" scope available for user authorization.
+    # The app SP has CAN_MANAGE_RUN permission via resource binding.
     # ============================================================
 
     def trigger_dq_job(self, table_name: str, user_prompt: str, sample_limit: Optional[int] = None) -> Dict[str, Any]:
-        """Trigger the DQ rule generation job (uses user's permissions)."""
+        """Trigger the DQ rule generation job (uses app SP credentials)."""
         if not Config.DQ_GENERATION_JOB_ID:
             return {"error": "DQ_GENERATION_JOB_ID not configured"}
 
         try:
-            client = self._get_client()
+            # Use app SP credentials (not user token) for job operations
+            client = self._get_client(use_user_token=False)
             job_parameters = {
                 "table_name": table_name,
                 "user_prompt": user_prompt
@@ -250,12 +254,13 @@ class DatabricksService:
             return {"error": str(e)}
 
     def trigger_validation_job(self, table_name: str, rules: List[Dict]) -> Dict[str, Any]:
-        """Trigger the DQ rule validation job (uses user's permissions)."""
+        """Trigger the DQ rule validation job (uses app SP credentials)."""
         if not Config.DQ_VALIDATION_JOB_ID:
             return {"error": "DQ_VALIDATION_JOB_ID not configured"}
 
         try:
-            client = self._get_client()
+            # Use app SP credentials (not user token) for job operations
+            client = self._get_client(use_user_token=False)
             response = client.jobs.run_now(
                 job_id=int(Config.DQ_VALIDATION_JOB_ID),
                 job_parameters={
@@ -268,9 +273,10 @@ class DatabricksService:
             return {"error": str(e)}
 
     def get_job_status(self, run_id: int) -> Dict[str, Any]:
-        """Get job run status (uses user's permissions)."""
+        """Get job run status (uses app SP credentials)."""
         try:
-            client = self._get_client()
+            # Use app SP credentials (not user token) for job operations
+            client = self._get_client(use_user_token=False)
             run = client.jobs.get_run(run_id=run_id)
             state = run.state
 
