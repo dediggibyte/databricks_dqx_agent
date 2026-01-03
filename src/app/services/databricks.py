@@ -3,18 +3,31 @@ Databricks SDK service for Unity Catalog and Job operations.
 
 Uses user authorization - the app acts on behalf of the logged-in user
 using their access token forwarded via x-forwarded-access-token header.
+
+SQL operations use databricks-sql-connector with OBO (On-Behalf-Of) authentication.
 """
+import os
 import json
 from typing import Optional, List, Dict, Any
 from flask import request, has_request_context
 from databricks.sdk import WorkspaceClient
+from databricks.sdk.core import Config as SdkConfig
 from databricks.sdk.service.jobs import RunLifeCycleState, RunResultState
+from databricks import sql
 
 from ..config import Config
 
 
 class DatabricksService:
     """Service for Databricks SDK operations using user authorization."""
+
+    def __init__(self):
+        """Initialize the service with SDK config for host detection."""
+        self._sdk_config = SdkConfig()
+
+    def _get_host(self) -> str:
+        """Get Databricks host from config or environment."""
+        return Config.DATABRICKS_HOST or os.getenv("DATABRICKS_HOST") or self._sdk_config.host
 
     def _get_user_token(self) -> Optional[str]:
         """Get user's access token from request headers."""
@@ -28,79 +41,119 @@ class DatabricksService:
         print("[DEBUG] No request context available")
         return None
 
+    def _get_sql_http_path(self) -> Optional[str]:
+        """Get SQL warehouse HTTP path."""
+        warehouse_id = Config.SQL_WAREHOUSE_ID
+        if warehouse_id:
+            return f"/sql/1.0/warehouses/{warehouse_id}"
+        return None
+
+    def _get_sql_connection(self):
+        """Get SQL connection using user's token (OBO) or service principal.
+
+        Uses databricks-sql-connector which properly handles OBO authentication.
+        """
+        host = self._get_host()
+        http_path = self._get_sql_http_path()
+
+        if not host or not http_path:
+            raise Exception(f"SQL connection not configured: host={host}, http_path={http_path}")
+
+        # Remove https:// prefix if present (connector expects just hostname)
+        if host.startswith("https://"):
+            host = host[8:]
+        elif host.startswith("http://"):
+            host = host[7:]
+
+        user_token = self._get_user_token()
+
+        if user_token:
+            # OBO (On-Behalf-Of) authentication using user's token
+            print(f"[DEBUG] Creating SQL connection with OBO auth, host={host}")
+            return sql.connect(
+                server_hostname=host,
+                http_path=http_path,
+                access_token=user_token
+            )
+        elif Config.DATABRICKS_TOKEN:
+            # Fallback to configured token (local dev)
+            print(f"[DEBUG] Creating SQL connection with configured token, host={host}")
+            return sql.connect(
+                server_hostname=host,
+                http_path=http_path,
+                access_token=Config.DATABRICKS_TOKEN
+            )
+        else:
+            # Use service principal credentials
+            print(f"[DEBUG] Creating SQL connection with SP credentials, host={host}")
+            return sql.connect(
+                server_hostname=host,
+                http_path=http_path,
+                credentials_provider=lambda: self._sdk_config.authenticate
+            )
+
     def _get_client(self, use_user_token: bool = True) -> WorkspaceClient:
         """Get WorkspaceClient with user's token or default auth.
 
-        Args:
-            use_user_token: If True, use user's forwarded token for user authorization.
-                          If False, use default app authentication.
+        Used for non-SQL operations like job management.
         """
-        import os
         user_token = self._get_user_token() if use_user_token else None
 
         if user_token:
-            # User authorization: use the logged-in user's token
-            # Must explicitly set auth_type="pat" to prevent SDK from detecting
-            # OAuth credentials in the Databricks Apps environment
-            host = Config.DATABRICKS_HOST or os.getenv("DATABRICKS_HOST")
-            print(f"[DEBUG] Creating client with user token, host={host}")
+            host = self._get_host()
+            print(f"[DEBUG] Creating WorkspaceClient with user token, host={host}")
             return WorkspaceClient(
                 host=host,
                 token=user_token,
-                auth_type="pat"  # Force PAT auth, ignore OAuth env vars
+                auth_type="pat"
             )
         elif Config.DATABRICKS_HOST and Config.DATABRICKS_TOKEN:
-            # Fallback to explicit token config (for local dev)
             return WorkspaceClient(
                 host=Config.DATABRICKS_HOST,
                 token=Config.DATABRICKS_TOKEN,
                 auth_type="pat"
             )
         else:
-            # Default authentication (app service principal via OAuth)
             return WorkspaceClient()
 
-    def get_sql_warehouse_id(self) -> Optional[str]:
-        """Get a SQL warehouse ID for executing queries.
-
-        Uses configured SQL_WAREHOUSE_ID if available, otherwise falls back
-        to dynamically listing warehouses.
-        """
-        # Use configured warehouse ID if available
-        if Config.SQL_WAREHOUSE_ID:
-            print(f"[DEBUG] Using configured SQL warehouse: {Config.SQL_WAREHOUSE_ID}")
-            return Config.SQL_WAREHOUSE_ID
-
-        # Fallback: dynamically list warehouses
-        try:
-            print("[DEBUG] No configured warehouse, listing available warehouses...")
-            client = self._get_client()
-            warehouses = list(client.warehouses.list())
-            for wh in warehouses:
-                if wh.state and wh.state.value == "RUNNING":
-                    return wh.id
-            if warehouses:
-                return warehouses[0].id
-        except Exception as e:
-            print(f"Error getting warehouse: {e}")
-        return None
+    # ============================================================
+    # SQL Operations (using databricks-sql-connector)
+    # ============================================================
 
     def execute_sql(self, statement: str) -> List[Any]:
-        """Execute SQL using Statement Execution API."""
-        client = self._get_client()
-        warehouse_id = self.get_sql_warehouse_id()
-        if not warehouse_id:
-            raise Exception("No SQL warehouse available")
+        """Execute SQL and return first column values."""
+        try:
+            with self._get_sql_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(statement)
+                    rows = cursor.fetchall()
+                    return [row[0] for row in rows] if rows else []
+        except Exception as e:
+            print(f"[ERROR] execute_sql failed: {e}")
+            raise
 
-        response = client.statement_execution.execute_statement(
-            warehouse_id=warehouse_id,
-            statement=statement,
-            wait_timeout="30s"
-        )
+    def execute_sql_with_schema(self, statement: str) -> Dict[str, Any]:
+        """Execute SQL and return full results with column info."""
+        try:
+            with self._get_sql_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(statement)
+                    columns = [desc[0] for desc in cursor.description] if cursor.description else []
+                    rows = cursor.fetchall()
 
-        if response.result and response.result.data_array:
-            return [row[0] for row in response.result.data_array]
-        return []
+                    # Convert rows to list of dicts
+                    result_rows = []
+                    for row in rows:
+                        result_rows.append(dict(zip(columns, row)))
+
+                    return {
+                        "columns": columns,
+                        "rows": result_rows,
+                        "row_count": len(result_rows)
+                    }
+        except Exception as e:
+            print(f"[ERROR] execute_sql_with_schema failed: {e}")
+            raise
 
     # ============================================================
     # Unity Catalog Operations
@@ -110,15 +163,11 @@ class DatabricksService:
         """Get list of available catalogs (uses user's permissions)."""
         try:
             catalogs = self.execute_sql("SHOW CATALOGS")
+            print(f"[DEBUG] Found catalogs: {catalogs}")
             return catalogs if catalogs else ["main"]
         except Exception as e:
             print(f"Error listing catalogs: {e}")
-            try:
-                client = self._get_client()
-                catalogs = list(client.catalogs.list())
-                return [c.name for c in catalogs if c.name]
-            except:
-                return ["main"]
+            return ["main"]
 
     def get_schemas(self, catalog: str) -> List[str]:
         """Get list of schemas in a catalog (uses user's permissions)."""
@@ -127,75 +176,39 @@ class DatabricksService:
             return schemas if schemas else ["default"]
         except Exception as e:
             print(f"Error listing schemas: {e}")
-            try:
-                client = self._get_client()
-                schemas = list(client.schemas.list(catalog_name=catalog))
-                return [s.name for s in schemas if s.name]
-            except:
-                return ["default"]
+            return ["default"]
 
     def get_tables(self, catalog: str, schema: str) -> List[str]:
         """Get list of tables in a schema (uses user's permissions)."""
         try:
-            client = self._get_client()
-            warehouse_id = self.get_sql_warehouse_id()
-            if not warehouse_id:
-                raise Exception("No SQL warehouse available")
-
-            response = client.statement_execution.execute_statement(
-                warehouse_id=warehouse_id,
-                statement=f"SHOW TABLES IN `{catalog}`.`{schema}`",
-                wait_timeout="30s"
-            )
-
-            if response.result and response.result.data_array:
-                return [row[1] for row in response.result.data_array]
+            result = self.execute_sql_with_schema(f"SHOW TABLES IN `{catalog}`.`{schema}`")
+            # SHOW TABLES returns: database, tableName, isTemporary
+            if result["rows"]:
+                # tableName is typically the second column
+                return [row.get("tableName", row.get("table_name", list(row.values())[1]))
+                        for row in result["rows"]]
             return []
         except Exception as e:
             print(f"Error listing tables: {e}")
-            try:
-                client = self._get_client()
-                tables = list(client.tables.list(catalog_name=catalog, schema_name=schema))
-                return [t.name for t in tables if t.name]
-            except:
-                return []
+            return []
 
     def get_table_sample(self, full_table_name: str, limit: int = 100) -> Dict[str, Any]:
         """Get sample data from a table (uses user's permissions)."""
         try:
-            client = self._get_client()
-            warehouse_id = self.get_sql_warehouse_id()
-            response = client.statement_execution.execute_statement(
-                warehouse_id=warehouse_id,
-                statement=f"SELECT * FROM {full_table_name} LIMIT {limit}",
-                wait_timeout="30s"
+            result = self.execute_sql_with_schema(
+                f"SELECT * FROM {full_table_name} LIMIT {limit}"
             )
-
-            if response.result and response.manifest:
-                columns = [col.name for col in response.manifest.schema.columns]
-                rows = []
-                if response.result.data_array:
-                    for row in response.result.data_array:
-                        rows.append(dict(zip(columns, row)))
-                return {"columns": columns, "rows": rows, "row_count": len(rows)}
-
-            return {"columns": [], "rows": [], "row_count": 0}
+            return result
         except Exception as e:
             print(f"Error getting sample data: {e}")
             return {"columns": [], "rows": [], "row_count": 0, "error": str(e)}
 
     # ============================================================
-    # Job Operations
+    # Job Operations (using WorkspaceClient)
     # ============================================================
 
     def trigger_dq_job(self, table_name: str, user_prompt: str, sample_limit: Optional[int] = None) -> Dict[str, Any]:
-        """Trigger the DQ rule generation job (uses user's permissions).
-
-        Args:
-            table_name: Full table name (catalog.schema.table)
-            user_prompt: User's description of desired DQ rules
-            sample_limit: Optional row limit for data profiling. If None, uses all rows.
-        """
+        """Trigger the DQ rule generation job (uses user's permissions)."""
         if not Config.DQ_GENERATION_JOB_ID:
             return {"error": "DQ_GENERATION_JOB_ID not configured"}
 
@@ -206,7 +219,6 @@ class DatabricksService:
                 "user_prompt": user_prompt
             }
 
-            # Only pass sample_limit if specified (empty string means use all rows)
             if sample_limit is not None:
                 job_parameters["sample_limit"] = str(sample_limit)
 
@@ -291,5 +303,5 @@ class DatabricksService:
         return result
 
 
-# Service instance (no longer singleton since each request uses different user token)
+# Service instance
 databricks_service = DatabricksService()

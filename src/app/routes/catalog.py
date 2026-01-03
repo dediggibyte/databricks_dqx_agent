@@ -12,12 +12,15 @@ catalog_bp = Blueprint('catalog', __name__, url_prefix='/api')
 @catalog_bp.route('/debug')
 def debug_info():
     """API: Debug endpoint to troubleshoot configuration."""
+    import os
     user_token = request.headers.get('x-forwarded-access-token')
+    warehouse_id = Config.SQL_WAREHOUSE_ID
     return jsonify({
         "user_token_present": bool(user_token),
         "user_token_length": len(user_token) if user_token else 0,
-        "sql_warehouse_id": Config.SQL_WAREHOUSE_ID,
-        "databricks_host": Config.DATABRICKS_HOST,
+        "sql_warehouse_id": warehouse_id,
+        "sql_http_path": f"/sql/1.0/warehouses/{warehouse_id}" if warehouse_id else None,
+        "databricks_host": Config.DATABRICKS_HOST or os.getenv("DATABRICKS_HOST"),
         "has_databricks_token": bool(Config.DATABRICKS_TOKEN),
     })
 
