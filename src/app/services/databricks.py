@@ -35,27 +35,29 @@ class DatabricksService:
             use_user_token: If True, use user's forwarded token for user authorization.
                           If False, use default app authentication.
         """
+        import os
         user_token = self._get_user_token() if use_user_token else None
 
         if user_token:
             # User authorization: use the logged-in user's token
-            # Host is auto-detected in Databricks Apps environment
-            if Config.DATABRICKS_HOST:
-                return WorkspaceClient(
-                    host=Config.DATABRICKS_HOST,
-                    token=user_token
-                )
-            else:
-                # Let SDK auto-detect host when running in Databricks Apps
-                return WorkspaceClient(token=user_token)
+            # Must explicitly set auth_type="pat" to prevent SDK from detecting
+            # OAuth credentials in the Databricks Apps environment
+            host = Config.DATABRICKS_HOST or os.getenv("DATABRICKS_HOST")
+            print(f"[DEBUG] Creating client with user token, host={host}")
+            return WorkspaceClient(
+                host=host,
+                token=user_token,
+                auth_type="pat"  # Force PAT auth, ignore OAuth env vars
+            )
         elif Config.DATABRICKS_HOST and Config.DATABRICKS_TOKEN:
             # Fallback to explicit token config (for local dev)
             return WorkspaceClient(
                 host=Config.DATABRICKS_HOST,
-                token=Config.DATABRICKS_TOKEN
+                token=Config.DATABRICKS_TOKEN,
+                auth_type="pat"
             )
         else:
-            # Default authentication (app service principal)
+            # Default authentication (app service principal via OAuth)
             return WorkspaceClient()
 
     def get_sql_warehouse_id(self) -> Optional[str]:
