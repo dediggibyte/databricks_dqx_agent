@@ -59,8 +59,19 @@ class DatabricksService:
             return WorkspaceClient()
 
     def get_sql_warehouse_id(self) -> Optional[str]:
-        """Get a SQL warehouse ID for executing queries."""
+        """Get a SQL warehouse ID for executing queries.
+
+        Uses configured SQL_WAREHOUSE_ID if available, otherwise falls back
+        to dynamically listing warehouses.
+        """
+        # Use configured warehouse ID if available
+        if Config.SQL_WAREHOUSE_ID:
+            print(f"[DEBUG] Using configured SQL warehouse: {Config.SQL_WAREHOUSE_ID}")
+            return Config.SQL_WAREHOUSE_ID
+
+        # Fallback: dynamically list warehouses
         try:
+            print("[DEBUG] No configured warehouse, listing available warehouses...")
             client = self._get_client()
             warehouses = list(client.warehouses.list())
             for wh in warehouses:
