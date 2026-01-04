@@ -1,0 +1,103 @@
+/* DQX Data Quality Manager - Custom Styles */
+
+:root {
+  --md-primary-fg-color: #FF3621;
+  --md-primary-fg-color--light: #FF6B4A;
+  --md-primary-fg-color--dark: #E02D1B;
+  --md-accent-fg-color: #FF6B4A;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #FF3621;
+  --md-primary-fg-color--light: #FF6B4A;
+  --md-primary-fg-color--dark: #E02D1B;
+  --md-accent-fg-color: #FF6B4A;
+}
+
+/* Hero section styling */
+.md-typeset .hero {
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.md-typeset .hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+/* Feature cards */
+.md-typeset .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.md-typeset .card {
+  background: var(--md-code-bg-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset .card h3 {
+  margin-top: 0;
+  color: var(--md-primary-fg-color);
+}
+
+/* Code blocks */
+.md-typeset code {
+  font-size: 0.85em;
+}
+
+/* Table improvements */
+.md-typeset table:not([class]) {
+  font-size: 0.85rem;
+}
+
+.md-typeset table:not([class]) th {
+  background: var(--md-primary-fg-color);
+  color: white;
+}
+
+/* Admonition customization */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: var(--md-primary-fg-color);
+}
+
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(255, 54, 33, 0.1);
+}
+
+/* Architecture diagram styling */
+.md-typeset pre.mermaid {
+  background: transparent;
+}
+
+/* Badge styling */
+.md-typeset .badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.md-typeset .badge-success {
+  background: #3FB950;
+  color: white;
+}
+
+.md-typeset .badge-warning {
+  background: #D29922;
+  color: white;
+}
+
+.md-typeset .badge-error {
+  background: #F85149;
+  color: white;
+}
