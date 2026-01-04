@@ -118,7 +118,10 @@ class DatabricksService:
                     credentials_provider=lambda: sdk_config.authenticate
                 )
             else:
-                raise Exception("No authentication method available (no user token, no configured token, no SP credentials)")
+                raise Exception(
+                    "No authentication method available "
+                    "(no user token, no configured token, no SP credentials)"
+                )
 
     def _get_client(self, use_user_token: bool = True) -> WorkspaceClient:
         """Get WorkspaceClient with user's token or default auth.
@@ -317,7 +320,7 @@ class DatabricksService:
                         if task_output.notebook_output and task_output.notebook_output.result:
                             try:
                                 result = json.loads(task_output.notebook_output.result)
-                            except:
+                            except (json.JSONDecodeError, ValueError):
                                 result = task_output.notebook_output.result
                             break
                     except Exception as e:
@@ -329,7 +332,7 @@ class DatabricksService:
                 if output.notebook_output and output.notebook_output.result:
                     try:
                         result = json.loads(output.notebook_output.result)
-                    except:
+                    except (json.JSONDecodeError, ValueError):
                         result = output.notebook_output.result
             except Exception as e:
                 print(f"Error getting run output: {e}")

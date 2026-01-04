@@ -36,7 +36,8 @@ class AIAnalysisService:
             table_escaped = table_name.replace("'", "''")
             prompt_escaped = user_prompt.replace("'", "''")
 
-            analysis_prompt = f"""You are a Data Quality expert. Analyze the following DQ rules generated for table '{table_escaped}'.
+            analysis_prompt = f"""You are a Data Quality expert. Analyze the following DQ rules \
+generated for table '{table_escaped}'.
 
 User's original requirement: {prompt_escaped}
 
@@ -60,7 +61,9 @@ Analyze each rule and provide a JSON response with this EXACT structure:
     "overall_quality_score": 8
 }}
 
-IMPORTANT: For each rule in rule_analysis, extract the rule_function from check.function and the column from check.arguments.col_name or check.arguments.col_names[0]. Return ONLY valid JSON."""
+IMPORTANT: For each rule in rule_analysis, extract the rule_function from check.function \
+and the column from check.arguments.col_name or check.arguments.col_names[0]. \
+Return ONLY valid JSON."""
 
             # Escape for SQL string
             prompt_sql_escaped = analysis_prompt.replace("'", "''")
