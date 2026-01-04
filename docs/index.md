@@ -1,59 +1,49 @@
 # DQX Data Quality Manager
 
-<div class="hero" markdown>
-
-**AI-powered data quality rule generation and validation for Databricks**
-
-[:material-rocket-launch: Get Started](runbook.md){ .md-button .md-button--primary }
-[:material-github: View on GitHub](https://github.com/dediggibyte/databricks_dqx_agent){ .md-button }
-
-</div>
+A Databricks App for generating and validating data quality rules using AI assistance with [Databricks DQX](https://databrickslabs.github.io/dqx/).
 
 ---
 
-## Overview
+## What is DQX Data Quality Manager?
 
-DQX Data Quality Manager is a **Databricks App** that provides an intuitive web interface for generating, validating, and managing data quality rules using AI assistance with [Databricks DQX](https://databrickslabs.github.io/dqx/).
+DQX Data Quality Manager provides an intuitive web interface for:
 
-Built on the Databricks platform, it leverages Unity Catalog for data access, serverless compute for rule generation/validation, and Lakebase for persistent rule storage with version control.
+- **Generating** data quality rules using AI and natural language prompts
+- **Validating** rules against your actual data with pass/fail statistics
+- **Storing** rules with version control in Lakebase (PostgreSQL)
+- **Analyzing** rule coverage and quality with AI-powered insights
+
+Built on the Databricks platform, it leverages Unity Catalog for data access, serverless compute for rule generation/validation, and Lakebase for persistent storage.
 
 ---
 
 ## Key Features
 
-<div class="grid" markdown>
+<div class="grid cards" markdown>
 
-<div class="card" markdown>
+-   **AI-Powered Generation**
 
-### :material-robot: AI-Powered Generation
+    ---
 
-Generate comprehensive DQX-compatible data quality rules using natural language prompts. Simply describe what you want to check, and AI creates the rules.
+    Generate comprehensive DQX-compatible data quality rules using natural language prompts. Simply describe what you want to check, and AI creates the rules.
 
-</div>
+-   **Rule Validation**
 
-<div class="card" markdown>
+    ---
 
-### :material-check-decagram: Rule Validation
+    Validate generated rules against your actual data using serverless Databricks jobs. Get detailed pass/fail statistics for each rule.
 
-Validate generated rules against your actual data using serverless Databricks jobs. Get detailed pass/fail statistics for each rule.
+-   **Version Control**
 
-</div>
+    ---
 
-<div class="card" markdown>
+    Store and track rule versions in Lakebase (PostgreSQL) with full audit history. Roll back to previous versions when needed.
 
-### :material-source-branch: Version Control
+-   **AI Analysis**
 
-Store and track rule versions in Lakebase (PostgreSQL) with full audit history. Roll back to previous versions when needed.
+    ---
 
-</div>
-
-<div class="card" markdown>
-
-### :material-brain: AI Analysis
-
-Get AI-powered insights on rule coverage, quality scores, and recommendations for improving your data quality checks.
-
-</div>
+    Get AI-powered insights on rule coverage, quality scores, and recommendations for improving your data quality checks.
 
 </div>
 
@@ -61,31 +51,10 @@ Get AI-powered insights on rule coverage, quality scores, and recommendations fo
 
 ## How It Works
 
-```mermaid
-flowchart LR
-    subgraph User["1. Select Data"]
-        A[Browse Catalog] --> B[Select Table]
-    end
-
-    subgraph Generate["2. Generate Rules"]
-        C[Enter Prompt] --> D[AI Generation]
-    end
-
-    subgraph Review["3. Review & Edit"]
-        E[Edit Rules] --> F[Validate]
-    end
-
-    subgraph Save["4. Save"]
-        G[AI Analysis] --> H[Save to Lakebase]
-    end
-
-    User --> Generate --> Review --> Save
-```
-
-1. **Select Data**: Browse Unity Catalog and select your target table
-2. **Generate Rules**: Describe your requirements in natural language
-3. **Review & Edit**: Review AI-generated rules, edit as needed, validate against data
-4. **Save**: Get AI analysis and save rules with version control
+1. **Select Data** - Browse Unity Catalog and select your target table
+2. **Generate Rules** - Describe your requirements in natural language
+3. **Review & Edit** - Review AI-generated rules, edit as needed, validate against data
+4. **Save** - Get AI analysis and save rules with version control
 
 ---
 
@@ -158,7 +127,7 @@ databricks bundle deploy -t dev
 
 Access your app at: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev`
 
-[:material-book-open: Full Deployment Guide](runbook.md){ .md-button }
+[Start using DQX Data Quality Manager](runbook.md){ .md-button .md-button--primary }
 
 ---
 
@@ -193,19 +162,13 @@ Access your app at: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-g
 
 ## Resources
 
-- [:material-book: Databricks DQX Documentation](https://databrickslabs.github.io/dqx/)
-- [:material-application: Databricks Apps Guide](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
-- [:material-package: Databricks Asset Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/)
-- [:material-github: GitHub Repository](https://github.com/dediggibyte/databricks_dqx_agent)
+- [Databricks DQX Documentation](https://databrickslabs.github.io/dqx/)
+- [Databricks Apps Guide](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
+- [Databricks Asset Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/)
+- [GitHub Repository](https://github.com/dediggibyte/databricks_dqx_agent)
 
 ---
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](https://github.com/dediggibyte/databricks_dqx_agent/blob/main/LICENSE) file for details.
-
----
-
-<div style="text-align: center; margin-top: 2rem;">
-  <small>Built with :material-heart: by Diggibyte Technologies</small>
-</div>

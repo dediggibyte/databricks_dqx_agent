@@ -14,36 +14,42 @@
   --md-accent-fg-color: #FF6B4A;
 }
 
-/* Hero section styling */
-.md-typeset .hero {
-  padding: 2rem 0;
-  text-align: center;
-}
-
-.md-typeset .hero h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-}
-
-/* Feature cards */
-.md-typeset .grid {
+/* Grid cards for features */
+.grid.cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
-  margin: 1rem 0;
+  margin: 1.5rem 0;
 }
 
-.md-typeset .card {
+.grid.cards > ul {
+  display: contents;
+}
+
+.grid.cards > ul > li,
+.grid.cards > * {
   background: var(--md-code-bg-color);
-  border-radius: 8px;
-  padding: 1.5rem;
   border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  list-style: none;
+  margin: 0;
 }
 
-.md-typeset .card h3 {
-  margin-top: 0;
-  color: var(--md-primary-fg-color);
+.grid.cards > ul > li:hover,
+.grid.cards > *:hover {
+  border-color: var(--md-primary-fg-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.grid.cards p {
+  margin: 0.5rem 0 0 0;
+}
+
+.grid.cards hr {
+  margin: 0.75rem 0;
+  border: none;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
 }
 
 /* Code blocks */
@@ -53,51 +59,42 @@
 
 /* Table improvements */
 .md-typeset table:not([class]) {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .md-typeset table:not([class]) th {
   background: var(--md-primary-fg-color);
   color: white;
+  font-weight: 600;
 }
 
 /* Admonition customization */
-.md-typeset .admonition.tip,
-.md-typeset details.tip {
+.md-typeset .admonition.info,
+.md-typeset details.info {
   border-color: var(--md-primary-fg-color);
 }
 
-.md-typeset .tip > .admonition-title,
-.md-typeset .tip > summary {
+.md-typeset .info > .admonition-title,
+.md-typeset .info > summary {
   background-color: rgba(255, 54, 33, 0.1);
 }
 
-/* Architecture diagram styling */
-.md-typeset pre.mermaid {
-  background: transparent;
-}
-
-/* Badge styling */
-.md-typeset .badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
+/* Button styling */
+.md-typeset .md-button {
   font-weight: 600;
-  text-transform: uppercase;
 }
 
-.md-typeset .badge-success {
-  background: #3FB950;
-  color: white;
+.md-typeset .md-button--primary {
+  background-color: var(--md-primary-fg-color);
+  border-color: var(--md-primary-fg-color);
 }
 
-.md-typeset .badge-warning {
-  background: #D29922;
-  color: white;
+.md-typeset .md-button--primary:hover {
+  background-color: var(--md-primary-fg-color--dark);
+  border-color: var(--md-primary-fg-color--dark);
 }
 
-.md-typeset .badge-error {
-  background: #F85149;
-  color: white;
+/* Architecture diagram */
+.md-typeset pre:has(code) {
+  background: var(--md-code-bg-color);
 }
