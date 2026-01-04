@@ -61,7 +61,7 @@ Built on the Databricks platform, it leverages Unity Catalog for data access, se
 ## Architecture
 
 <figure class="arch-diagram">
-  <img src="images/Architecture.png" alt="DQX Architecture">
+  <img src="images/architecture.png" alt="DQX Architecture">
   <figcaption>DQX Data Quality Manager architecture showing Flask app with Unity Catalog, Serverless Jobs, and Lakebase</figcaption>
 </figure>
 

@@ -44,7 +44,7 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 
 ## Architecture
 
-![DQX Architecture](docs/images/Architecture.png)
+![DQX Architecture](docs/images/architecture.png)
 
 ### Authentication Model
 
