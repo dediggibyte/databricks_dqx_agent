@@ -18,6 +18,7 @@ rules_json = dbutils.widgets.get("rules")
 
 import json
 from datetime import datetime
+from databricks.sdk import WorkspaceClient
 from databricks.labs.dqx.engine import DQEngine
 
 # Parse rules from JSON
@@ -53,7 +54,8 @@ except Exception as e:
 # COMMAND ----------
 
 # Initialize DQ Engine and apply checks
-dq_engine = DQEngine(spark)
+ws = WorkspaceClient()
+dq_engine = DQEngine(ws)
 
 # Apply checks and split into valid/invalid DataFrames
 try:
