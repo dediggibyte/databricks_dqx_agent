@@ -1152,11 +1152,13 @@ footer a:hover {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid var(--border-light);
+    color: var(--text-dark);
 }
 
 .validation-detail-table th {
     background: #f8f9fa;
     font-weight: 600;
+    color: var(--text-dark);
 }
 
 .validation-detail-table .status-pass {
