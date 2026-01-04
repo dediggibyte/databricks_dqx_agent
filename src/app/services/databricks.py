@@ -25,6 +25,15 @@ class DatabricksService:
         """Initialize the service."""
         self._sdk_config = None
 
+    @property
+    def client(self) -> WorkspaceClient:
+        """Get WorkspaceClient with user's token (for SQL Statement Execution API)."""
+        return self._get_client(use_user_token=True)
+
+    def get_sql_warehouse_id(self) -> Optional[str]:
+        """Get configured SQL warehouse ID."""
+        return Config.SQL_WAREHOUSE_ID
+
     def _get_sdk_config(self) -> Optional[SdkConfig]:
         """Lazily get SDK config (only when running in Databricks environment)."""
         if self._sdk_config is None:
