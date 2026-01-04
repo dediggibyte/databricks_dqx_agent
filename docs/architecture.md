@@ -9,7 +9,7 @@ This document describes the system architecture and design of DQX Data Quality M
 DQX Data Quality Manager is a multi-tier application built on the Databricks platform:
 
 <figure class="arch-diagram arch-diagram--hero">
-  <img src="images/system-overview.png" alt="DQX System Overview">
+  <img src="../images/system-overview.png" alt="DQX System Overview">
   <figcaption>Complete system architecture showing users, authentication, compute, and data layers</figcaption>
 </figure>
 
@@ -20,14 +20,14 @@ DQX Data Quality Manager is a multi-tier application built on the Databricks pla
 ### Rule Generation Flow
 
 <figure class="arch-diagram">
-  <img src="images/rule-generation-flow.png" alt="Rule Generation Flow">
+  <img src="../images/rule-generation-flow.png" alt="Rule Generation Flow">
   <figcaption>DQ rule generation sequence: User selects table, enters prompt, and AI generates rules</figcaption>
 </figure>
 
 ### Rule Validation Flow
 
 <figure class="arch-diagram">
-  <img src="images/rule-validation-flow.png" alt="Rule Validation Flow">
+  <img src="../images/rule-validation-flow.png" alt="Rule Validation Flow">
   <figcaption>DQ rule validation sequence: Rules are applied against actual data using DQX Engine</figcaption>
 </figure>
 
@@ -159,7 +159,7 @@ DQX uses a **dual authentication model**:
 Used for operations that should respect user permissions:
 
 <figure class="arch-diagram">
-  <img src="images/auth-obo-path.png" alt="OBO Authentication Path">
+  <img src="../images/auth-obo-path.png" alt="OBO Authentication Path">
 </figure>
 
 **Operations:**
@@ -173,7 +173,7 @@ Used for operations that should respect user permissions:
 Used for operations without user scope support:
 
 <figure class="arch-diagram">
-  <img src="images/auth-sp-path.png" alt="Service Principal Authentication Path">
+  <img src="../images/auth-sp-path.png" alt="Service Principal Authentication Path">
 </figure>
 
 **Operations:**
@@ -187,7 +187,7 @@ Used for operations without user scope support:
 Used for PostgreSQL connections:
 
 <figure class="arch-diagram">
-  <img src="images/auth-oauth-path.png" alt="OAuth Authentication Path for Lakebase">
+  <img src="../images/auth-oauth-path.png" alt="OAuth Authentication Path for Lakebase">
 </figure>
 
 For detailed authentication documentation, see [Authentication](authentication.md).
@@ -296,7 +296,7 @@ resources:
 ### Token Flow
 
 <figure class="arch-diagram">
-  <img src="images/token-flow.png" alt="Security Token Flow">
+  <img src="../images/token-flow.png" alt="Security Token Flow">
   <figcaption>OAuth token lifecycle from user login to resource access</figcaption>
 </figure>
 
