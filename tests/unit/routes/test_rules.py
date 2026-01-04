@@ -124,9 +124,10 @@ class TestConfirmRoute:
             content_type='application/json'
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         data = response.get_json()
         assert data["success"] is False
+        assert "rules" in data["error"].lower()
 
     def test_confirm_missing_table_name(self, client, sample_rules):
         """Test POST /api/confirm with missing table_name."""
@@ -138,9 +139,10 @@ class TestConfirmRoute:
             content_type='application/json'
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 400
         data = response.get_json()
         assert data["success"] is False
+        assert "table" in data["error"].lower()
 
     def test_confirm_success(self, client, sample_rules):
         """Test POST /api/confirm saves rules."""
