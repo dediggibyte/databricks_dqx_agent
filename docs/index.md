@@ -60,27 +60,10 @@ Built on the Databricks platform, it leverages Unity Catalog for data access, se
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Databricks App (Flask)                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Generator  │  │  Validator  │  │      REST API           │  │
-│  │    Page     │  │    Page     │  │  /api/generate          │  │
-│  │             │  │             │  │  /api/validate          │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│ Unity Catalog │    │  Serverless   │    │   Lakebase    │
-│  (OBO Auth)   │    │  Jobs (SP)    │    │   (OAuth)     │
-│               │    │               │    │               │
-│ • Browse data │    │ • Generate    │    │ • Store rules │
-│ • Sample data │    │ • Validate    │    │ • Versioning  │
-│ • AI queries  │    │ • Profile     │    │ • History     │
-└───────────────┘    └───────────────┘    └───────────────┘
-```
+<figure class="arch-diagram">
+  <img src="images/Architecture.png" alt="DQX Architecture">
+  <figcaption>DQX Data Quality Manager architecture showing Flask app with Unity Catalog, Serverless Jobs, and Lakebase</figcaption>
+</figure>
 
 ---
 

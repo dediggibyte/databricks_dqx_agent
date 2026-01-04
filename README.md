@@ -44,23 +44,7 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Databricks App (Flask)                        │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Generator  │  │  Validator  │  │      REST API           │  │
-│  │    Page     │  │    Page     │  │  /api/generate          │  │
-│  │             │  │             │  │  /api/validate          │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
-┌───────────────┐    ┌───────────────┐    ┌───────────────┐
-│ Unity Catalog │    │  Serverless   │    │   Lakebase    │
-│  (OBO Auth)   │    │  Jobs (SP)    │    │   (OAuth)     │
-└───────────────┘    └───────────────┘    └───────────────┘
-```
+![DQX Architecture](docs/images/Architecture.png)
 
 ### Authentication Model
 

@@ -8,39 +8,10 @@ This document describes the system architecture and design of DQX Data Quality M
 
 DQX Data Quality Manager is a multi-tier application built on the Databricks platform:
 
-```mermaid
-flowchart TB
-    subgraph Users["Users"]
-        U1[Data Engineers]
-        U2[Data Analysts]
-        U3[Data Stewards]
-    end
-
-    subgraph DatabricksApps["Databricks Apps Platform"]
-        Auth[OAuth Authentication]
-        App[DQX Flask App]
-    end
-
-    subgraph Compute["Compute Layer"]
-        SQL[SQL Warehouse]
-        Jobs[Serverless Jobs]
-    end
-
-    subgraph Data["Data Layer"]
-        UC[(Unity Catalog)]
-        LB[(Lakebase)]
-        MS[Model Serving]
-    end
-
-    Users --> Auth
-    Auth -->|x-forwarded-access-token| App
-    App -->|OBO Auth| SQL
-    App -->|SP Auth| Jobs
-    SQL --> UC
-    SQL --> MS
-    Jobs --> UC
-    App -->|OAuth| LB
-```
+<figure class="arch-diagram arch-diagram--hero">
+  <img src="images/System%20Overview.png" alt="DQX System Overview">
+  <figcaption>Complete system architecture showing users, authentication, compute, and data layers</figcaption>
+</figure>
 
 ---
 
@@ -48,46 +19,17 @@ flowchart TB
 
 ### Rule Generation Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant App as DQX App
-    participant SQL as SQL Warehouse
-    participant Job as Serverless Job
-    participant UC as Unity Catalog
-    participant AI as Model Serving
-
-    User->>App: Select table + enter prompt
-    App->>SQL: SHOW CATALOGS/SCHEMAS/TABLES (OBO)
-    SQL->>UC: Query metadata
-    UC-->>SQL: Return results
-    SQL-->>App: Return data
-    App->>Job: Trigger generation job (SP)
-    Job->>UC: Load table data
-    Job->>AI: Generate rules with AI
-    AI-->>Job: Return generated rules
-    Job-->>App: Return rules JSON
-    App-->>User: Display rules for review
-```
+<figure class="arch-diagram">
+  <img src="images/Rule%20Generation%20Flow.png" alt="Rule Generation Flow">
+  <figcaption>DQ rule generation sequence: User selects table, enters prompt, and AI generates rules</figcaption>
+</figure>
 
 ### Rule Validation Flow
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant App as DQX App
-    participant Job as Serverless Job
-    participant UC as Unity Catalog
-    participant DQX as DQX Engine
-
-    User->>App: Select rules + click validate
-    App->>Job: Trigger validation job (SP)
-    Job->>UC: Load table data
-    Job->>DQX: Apply DQ checks
-    DQX-->>Job: Return valid/invalid splits
-    Job-->>App: Return validation results
-    App-->>User: Display pass/fail statistics
-```
+<figure class="arch-diagram">
+  <img src="images/Rule%20Validation%20Flow.png" alt="Rule Validation Flow">
+  <figcaption>DQ rule validation sequence: Rules are applied against actual data using DQX Engine</figcaption>
+</figure>
 
 ---
 
@@ -216,14 +158,12 @@ DQX uses a **dual authentication model**:
 
 Used for operations that should respect user permissions:
 
-```mermaid
-flowchart LR
-    A[User Request] -->|x-forwarded-access-token| B[Flask App]
-    B -->|User Token| C[SQL Warehouse]
-    C -->|User Permissions| D[(Unity Catalog)]
-```
+<figure class="arch-diagram">
+  <img src="images/Auth%20OBO%20Path.png" alt="OBO Authentication Path">
+</figure>
 
 **Operations:**
+
 - `SHOW CATALOGS/SCHEMAS/TABLES`
 - `SELECT * FROM table`
 - `SELECT ai_query(...)`
@@ -232,14 +172,12 @@ flowchart LR
 
 Used for operations without user scope support:
 
-```mermaid
-flowchart LR
-    A[User Request] --> B[Flask App]
-    B -->|App SP Credentials| C[Jobs API]
-    C -->|SP Permissions| D[Serverless Job]
-```
+<figure class="arch-diagram">
+  <img src="images/Auth%20SP%20Path.png" alt="Service Principal Authentication Path">
+</figure>
 
 **Operations:**
+
 - `jobs.run_now()`
 - `jobs.get_run()`
 - `jobs.get_run_output()`
@@ -248,11 +186,9 @@ flowchart LR
 
 Used for PostgreSQL connections:
 
-```mermaid
-flowchart LR
-    A[User Request] -->|x-forwarded-access-token| B[Flask App]
-    B -->|OAuth Token as Password| C[(Lakebase PostgreSQL)]
-```
+<figure class="arch-diagram">
+  <img src="images/Auth%20OAuth%20Path.png" alt="OAuth Authentication Path for Lakebase">
+</figure>
 
 For detailed authentication documentation, see [Authentication](authentication.md).
 
@@ -359,14 +295,10 @@ resources:
 
 ### Token Flow
 
-```mermaid
-flowchart TB
-    A[User] -->|1. Login| B[Databricks OAuth]
-    B -->|2. Issue Token| C[Access Token]
-    C -->|3. Forward via Header| D[DQX App]
-    D -->|4. Use for API calls| E[Databricks APIs]
-    E -->|5. Validate + Authorize| F[Resources]
-```
+<figure class="arch-diagram">
+  <img src="images/Token%20Flow.png" alt="Security Token Flow">
+  <figcaption>OAuth token lifecycle from user login to resource access</figcaption>
+</figure>
 
 ### No Stored Credentials
 
