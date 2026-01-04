@@ -1,36 +1,40 @@
 # MkDocs Configuration for DQX Rule Generator
 site_name: DQX Data Quality Manager
-site_description: Generate and validate data quality rules using AI assistance with Databricks DQX
+site_description: AI-powered data quality rule generation and validation for Databricks
 site_url: https://dediggibyte.github.io/databricks_dqx_agent/
 repo_url: https://github.com/dediggibyte/databricks_dqx_agent
 repo_name: dediggibyte/databricks_dqx_agent
+edit_uri: edit/main/docs/
 
 theme:
   name: material
   palette:
-    # Light mode
     - scheme: default
-      primary: red
-      accent: red
+      primary: deep orange
+      accent: orange
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    # Dark mode
     - scheme: slate
-      primary: red
-      accent: red
+      primary: deep orange
+      accent: orange
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
   features:
-    - navigation.tabs
-    - navigation.sections
+    - content.code.copy
+    - content.tabs.link
     - navigation.expand
+    - navigation.footer
+    - navigation.sections
+    - navigation.tabs
     - navigation.top
     - search.highlight
     - search.suggest
-    - content.code.copy
-    - content.tabs.link
+    - toc.follow
   icon:
     repo: fontawesome/brands/github
   logo: assets/logo.svg
@@ -39,32 +43,38 @@ theme:
 nav:
   - Home: index.md
   - Getting Started:
-    - Runbook: runbook.md
+    - Quick Start: runbook.md
     - Configuration: configuration.md
+    - Authentication: authentication.md
   - Architecture:
-    - Overview: architecture.md
+    - System Overview: architecture.md
     - API Reference: api-reference.md
-  - Features:
+  - Reference:
     - DQX Checks: dqx-checks.md
     - CI/CD Pipeline: ci-cd.md
 
 markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-      line_spans: __span
-      pygments_lang_class: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.tabbed:
-      alternate_style: true
+  - abbr
   - admonition
-  - pymdownx.details
-  - tables
   - attr_list
+  - def_list
+  - footnotes
   - md_in_html
+  - tables
   - toc:
       permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
 
 plugins:
   - search
@@ -73,6 +83,11 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/dediggibyte/databricks_dqx_agent
+    - icon: fontawesome/solid/globe
+      link: https://databrickslabs.github.io/dqx/
   generator: false
 
-copyright: Copyright &copy; 2025 Diggibyte
+extra_css:
+  - stylesheets/extra.css
+
+copyright: Copyright &copy; 2026 Diggibyte Technologies

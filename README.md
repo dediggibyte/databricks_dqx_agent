@@ -1,13 +1,74 @@
-# DQX - Data Quality Rule Generator
+# DQX Data Quality Manager
 
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
-[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Databricks](https://img.shields.io/badge/Databricks-Apps-orange.svg)](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
+[![Databricks](https://img.shields.io/badge/Databricks-Apps-FF3621.svg)](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
 [![DQX](https://img.shields.io/badge/DQX-Data%20Quality-green.svg)](https://databrickslabs.github.io/dqx/)
 [![CI/CD Dev](https://github.com/dediggibyte/databricks_dqx_agent/actions/workflows/ci-cd-dev.yml/badge.svg)](https://github.com/dediggibyte/databricks_dqx_agent/actions/workflows/ci-cd-dev.yml)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://dediggibyte.github.io/databricks_dqx_agent/)
 
-A Databricks App for generating data quality rules using AI assistance with [Databricks DQX](https://databrickslabs.github.io/dqx/).
+**AI-powered data quality rule generation and validation for Databricks**
+
+A Databricks App for generating, validating, and managing data quality rules using AI assistance with [Databricks DQX](https://databrickslabs.github.io/dqx/).
+
+---
+
+## Features
+
+- **AI-Powered Generation** - Generate DQX rules from natural language prompts
+- **Rule Validation** - Validate rules against actual data with pass/fail statistics
+- **Version Control** - Store rules in Lakebase with full audit history
+- **AI Analysis** - Get coverage insights and recommendations from AI
+- **OBO Authentication** - Users only see data they have permission to access
+
+---
+
+## Quick Start
+
+```bash
+# 1. Clone and configure
+git clone https://github.com/dediggibyte/databricks_dqx_agent.git
+cd databricks_dqx_agent
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+
+# 2. Deploy
+databricks bundle validate -t dev
+databricks bundle deploy -t dev
+```
+
+Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev`
+
+> **Note:** DAB automatically deploys notebooks and configures permissions. No manual setup required.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Databricks App (Flask)                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │  Generator  │  │  Validator  │  │      REST API           │  │
+│  │    Page     │  │    Page     │  │  /api/generate          │  │
+│  │             │  │             │  │  /api/validate          │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+┌───────────────┐    ┌───────────────┐    ┌───────────────┐
+│ Unity Catalog │    │  Serverless   │    │   Lakebase    │
+│  (OBO Auth)   │    │  Jobs (SP)    │    │   (OAuth)     │
+└───────────────┘    └───────────────┘    └───────────────┘
+```
+
+### Authentication Model
+
+| Component | Auth Method | Description |
+|-----------|-------------|-------------|
+| **Unity Catalog** | User Token (OBO) | Access data with user's permissions |
+| **Jobs** | App Service Principal | Trigger generation/validation jobs |
+| **Lakebase** | User OAuth | Store rules with user identity |
 
 ---
 
@@ -15,111 +76,39 @@ A Databricks App for generating data quality rules using AI assistance with [Dat
 
 ```
 databricks_dqx_agent/
-├── src/                      # App source code (deployed to Databricks Apps)
-│   ├── app.yaml              # Databricks App runtime configuration
-│   ├── wsgi.py               # WSGI entry point (gunicorn)
-│   ├── requirements.txt      # Python dependencies
-│   ├── app/                  # Flask application package
+├── src/                      # Flask app (deployed to Databricks Apps)
+│   ├── app/                  # Application code
+│   │   ├── routes/           # API endpoints
+│   │   └── services/         # Business logic (databricks, ai, lakebase)
 │   ├── templates/            # HTML templates
 │   └── static/               # CSS and JavaScript
-│
-├── notebooks/                # Databricks notebooks
+├── notebooks/                # Databricks notebooks (serverless jobs)
 ├── resources/                # DAB resource definitions
-├── environments/             # Per-environment configurations
-├── .github/                  # CI/CD workflows
-├── docs/                     # Documentation
-└── databricks.yml            # DAB bundle configuration
+├── environments/             # Per-environment configs (dev, stage, prod)
+├── docs/                     # Documentation (MkDocs)
+└── .github/                  # CI/CD workflows
 ```
 
 ---
 
-## Deployment Guide
+## Configuration
 
-### Prerequisites
+### Required Environment Variables
 
-| Requirement | Description |
-|-------------|-------------|
-| Databricks CLI | [Install here](https://docs.databricks.com/dev-tools/cli/install.html) |
-| AWS Databricks Workspace | With Unity Catalog enabled |
-| SQL Warehouse | Any warehouse (Serverless recommended) |
-| Lakebase (optional) | For saving rules with versioning |
-| Model Serving (optional) | For AI analysis (`databricks-claude-sonnet-4-5`) |
+Set in `src/app.yaml`:
 
-### Step 1: Clone & Configure
-
-```bash
-git clone <repository-url>
-cd databricks_dqx_agent
-
-export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-```
-
-### Step 2: Upload Notebook
-
-```bash
-databricks workspace import notebooks/generate_dq_rules_fast.py \
-  /Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast \
-  --language PYTHON --overwrite
-```
-
-### Step 3: Update Configuration
-
-Edit `environments/dev/variables.yml`:
-```yaml
-notebook_path:
-  default: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
-```
-
-### Step 4: Deploy Bundle
-
-```bash
-databricks bundle validate -t dev
-databricks bundle deploy -t dev
-```
-
-### Step 5: Get Job IDs & Update App
-
-```bash
-databricks jobs list --output json | grep -A2 "DQ Rule"
-```
-
-Edit `src/app.yaml`:
-```yaml
-env:
-  - name: DQ_GENERATION_JOB_ID
-    value: "<generation-job-id>"
-
-  - name: DQ_VALIDATION_JOB_ID
-    value: "<validation-job-id>"
-
-  - name: LAKEBASE_HOST              # Optional
-    value: "<your-lakebase-host>"
-```
-
-### Step 6: Redeploy
-
-```bash
-databricks bundle deploy -t dev
-```
-
-### Done!
-
-Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev`
-
----
-
-## Documentation
-
-**Start here:** [Runbook](docs/runbook.md) - Complete guide for deployment, configuration, and operations
-
-| Document | Description |
+| Variable | Description |
 |----------|-------------|
-| [Runbook](docs/runbook.md) | **Complete getting started guide** |
-| [Architecture](docs/architecture.md) | System design and project structure |
-| [Configuration](docs/configuration.md) | Environment variables and app.yaml |
-| [API Reference](docs/api-reference.md) | REST API endpoints |
-| [CI/CD Pipeline](docs/ci-cd.md) | GitHub Actions deployment |
-| [DQX Checks](docs/dqx-checks.md) | Available DQX check functions |
+| `SQL_WAREHOUSE_ID` | SQL Warehouse ID for queries |
+| `DQ_GENERATION_JOB_ID` | Auto-set by DAB |
+| `DQ_VALIDATION_JOB_ID` | Auto-set by DAB |
+
+### Optional
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LAKEBASE_HOST` | Lakebase PostgreSQL host | - |
+| `MODEL_SERVING_ENDPOINT` | AI model endpoint | `databricks-claude-sonnet-4-5` |
 
 ---
 
@@ -128,12 +117,40 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 ```bash
 export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="your-token"
-export DQ_GENERATION_JOB_ID="your-generation-job-id"
-export DQ_VALIDATION_JOB_ID="your-validation-job-id"
+export DQ_GENERATION_JOB_ID="your-job-id"
+export DQ_VALIDATION_JOB_ID="your-job-id"
+export SQL_WAREHOUSE_ID="your-warehouse-id"
 
 cd src
+pip install -r requirements.txt
 python wsgi.py
 ```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Quick Start](docs/runbook.md) | Deployment guide |
+| [Configuration](docs/configuration.md) | Environment variables |
+| [Authentication](docs/authentication.md) | OBO and security |
+| [Architecture](docs/architecture.md) | System design |
+| [API Reference](docs/api-reference.md) | REST endpoints |
+| [DQX Checks](docs/dqx-checks.md) | Available check functions |
+| [CI/CD](docs/ci-cd.md) | GitHub Actions setup |
+
+**Full Documentation:** [https://dediggibyte.github.io/databricks_dqx_agent/](https://dediggibyte.github.io/databricks_dqx_agent/)
+
+---
+
+## CI/CD
+
+| Environment | Trigger | Workflow |
+|-------------|---------|----------|
+| `dev` | Push to main, PR | `ci-cd-dev.yml` |
+| `stage` | Manual | `ci-cd-stage.yml` |
+| `prod` | Manual | `ci-cd-prod.yml` |
 
 ---
 
@@ -142,3 +159,9 @@ python wsgi.py
 - [Databricks DQX Documentation](https://databrickslabs.github.io/dqx/)
 - [Databricks Apps Guide](https://docs.databricks.com/dev-tools/databricks-apps/index.html)
 - [Databricks Asset Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/)
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.

@@ -1,59 +1,17 @@
-# DQX Data Quality Rule Generator - Runbook
+# Quick Start Guide
 
-Complete guide for deploying, configuring, and operating the DQX Rule Generator application.
-
----
-
-## Table of Contents
-
-1. [Quick Start](#quick-start)
-2. [Prerequisites](#prerequisites)
-3. [Repository Structure](#repository-structure)
-4. [Configuration](#configuration)
-5. [Deployment](#deployment)
-6. [Using the Application](#using-the-application)
-7. [CI/CD Pipeline](#cicd-pipeline)
-8. [Troubleshooting](#troubleshooting)
-9. [Maintenance](#maintenance)
-
----
-
-## Quick Start
-
-```bash
-# 1. Clone and configure
-git clone <repository-url>
-cd databricks_dqx_agent
-export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-
-# 2. Upload notebook
-databricks workspace import notebooks/generate_dq_rules_fast.py \
-  /Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast \
-  --language PYTHON --overwrite
-
-# 3. Update notebook path in environments/dev/variables.yml
-# 4. Deploy
-databricks bundle deploy -t dev
-
-# 5. Get Job ID and update src/app.yaml with DQ_GENERATION_JOB_ID
-databricks jobs list --output json | grep -A2 "DQ Rule Generation"
-
-# 6. Redeploy
-databricks bundle deploy -t dev
-```
-
-Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev`
+Complete guide for deploying, configuring, and operating DQX Data Quality Manager.
 
 ---
 
 ## Prerequisites
 
-### Tools Required
+### Required Tools
 
 | Tool | Installation |
 |------|--------------|
-| Databricks CLI | `pip install databricks-cli` or [Install Guide](https://docs.databricks.com/dev-tools/cli/install.html) |
-| Python 3.13+ | For local development (3.13, 3.14 supported) |
+| Databricks CLI v0.200+ | `pip install databricks-cli` or [Install Guide](https://docs.databricks.com/dev-tools/cli/install.html) |
+| Python 3.13+ | For local development |
 
 ### Databricks Workspace Requirements
 
@@ -71,191 +29,100 @@ Access: `https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 |----------|------------|
 | Unity Catalog | `USE CATALOG`, `USE SCHEMA`, `SELECT` on target tables |
 | SQL Warehouse | `CAN USE` |
-| Jobs | `CAN MANAGE RUN` (granted automatically via DAB deployment) |
+| Jobs | `CAN MANAGE RUN` (granted automatically via DAB) |
 | Lakebase | OAuth access (if using save feature) |
 
 ---
 
-## Repository Structure
+## Quick Start
+
+```bash
+# 1. Clone and configure
+git clone https://github.com/dediggibyte/databricks_dqx_agent.git
+cd databricks_dqx_agent
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+
+# 2. Deploy the bundle (notebooks are deployed automatically)
+databricks bundle validate -t dev
+databricks bundle deploy -t dev
+
+# 3. Access your app
+open https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
+```
+
+!!! success "That's it!"
+    DAB automatically deploys notebooks to `${workspace.root_path}/notebooks/` and configures job permissions. No manual notebook upload required.
+
+---
+
+## Step-by-Step Deployment
+
+### Step 1: Set Workspace
+
+```bash
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+```
+
+### Step 2: Validate Bundle
+
+```bash
+databricks bundle validate -t dev
+```
+
+This checks:
+- YAML syntax
+- Variable resolution
+- Resource definitions
+
+### Step 3: Deploy
+
+```bash
+databricks bundle deploy -t dev
+```
+
+This creates:
+- Databricks App (`dqx-rule-generator-dev`)
+- Generation Job (`DQ Rule Generation - Dev`)
+- Validation Job (`DQ Rule Validation - Dev`)
+- Syncs notebooks to workspace
+
+### Step 4: Access Application
 
 ```
-databricks_dqx_agent/
-├── databricks.yml            # DAB main configuration
-├── README.md                 # Quick deployment guide
-│
-├── src/                      # App source code (deployed to Databricks Apps)
-│   ├── app.yaml              # App runtime config (env vars)
-│   ├── wsgi.py               # WSGI entry point (gunicorn)
-│   ├── requirements.txt      # Python dependencies
-│   ├── app/                  # Flask application
-│   │   ├── __init__.py       # App factory (create_app)
-│   │   ├── config.py         # Configuration class
-│   │   ├── routes/           # API endpoints
-│   │   └── services/         # Business logic
-│   ├── templates/            # HTML templates
-│   │   ├── base.html         # Base template with navigation
-│   │   ├── generator.html    # DQ rule generator page
-│   │   └── validator.html    # DQ rule validator page
-│   └── static/               # CSS and JavaScript
-│
-├── notebooks/                # Databricks notebooks
-│   ├── generate_dq_rules_fast.py  # DQ rule generation
-│   └── validate_dq_rules.py       # DQ rule validation
-│
-├── resources/                # DAB resource definitions
-│   ├── apps.yml              # Databricks App definition
-│   ├── generation_job.yml    # DQ rule generation job (Serverless)
-│   └── validation_job.yml    # DQ rule validation job (Serverless)
-│
-├── environments/             # Per-environment configs
-│   ├── dev/
-│   │   ├── targets.yml       # Dev target (mode, workspace)
-│   │   ├── variables.yml     # Dev variables (app_name, notebook_path)
-│   │   └── permissions.yml   # Dev permissions
-│   ├── stage/
-│   │   └── ...
-│   └── prod/
-│       └── ...
-│
-├── docs/                     # Documentation
-│   ├── runbook.md            # This file
-│   ├── architecture.md       # System design
-│   ├── configuration.md      # Config reference
-│   ├── api-reference.md      # API endpoints
-│   ├── ci-cd.md              # CI/CD pipeline
-│   └── dqx-checks.md         # DQX check functions
-│
-└── .github/                  # CI/CD workflows
-    ├── workflows/
-    └── actions/
+https://your-workspace.cloud.databricks.com/apps/dqx-rule-generator-dev
 ```
 
 ---
 
 ## Configuration
 
-### Files to Configure
+### Required Configuration
 
-| File | What to Update | When |
-|------|----------------|------|
-| `environments/<env>/variables.yml` | `notebook_path`, `validation_notebook_path` | Before first deployment |
-| `src/app.yaml` | `DQ_GENERATION_JOB_ID`, `DQ_VALIDATION_JOB_ID` | After first deployment |
-| `src/app.yaml` | `LAKEBASE_HOST` (optional) | If using Lakebase |
-| `src/app.yaml` | `MODEL_SERVING_ENDPOINT` (optional) | If using AI analysis |
-
-### Environment Variables (src/app.yaml)
+After deployment, verify these are set in `src/app.yaml`:
 
 ```yaml
-command:
-  - gunicorn
-  - --bind
-  - 0.0.0.0:8000
-  - --workers
-  - "2"
-  - --timeout
-  - "300"
-  - wsgi:app
-
 env:
-  # Required - Get from: databricks jobs list
-  - name: DQ_GENERATION_JOB_ID
-    value: "<generation-job-id>"
-
-  - name: DQ_VALIDATION_JOB_ID
-    value: "<validation-job-id>"
-
-  # Optional - Lakebase for saving rules
-  - name: LAKEBASE_HOST
-    value: "<lakebase-host>.database.us-east-1.cloud.databricks.com"
-  - name: LAKEBASE_DATABASE
-    value: "databricks_postgres"
-
-  # Optional - AI analysis
-  - name: MODEL_SERVING_ENDPOINT
-    value: "databricks-claude-sonnet-4-5"
+  - name: SQL_WAREHOUSE_ID
+    value: "<your-sql-warehouse-id>"
 ```
 
-> **Note:** In CI/CD deployments, `src/app.yaml` is automatically generated with job IDs and secrets from GitHub environment secrets.
+!!! tip "Get Warehouse ID"
+    ```bash
+    databricks warehouses list --output json | jq '.[].id'
+    ```
 
-### Bundle Variables (environments/dev/variables.yml)
+### Optional Configuration
 
-```yaml
-targets:
-  dev:
-    variables:
-      app_name: "dqx-rule-generator-dev"
-      job_name: "DQ Rule Generation - Dev"
-      notebook_path: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
-```
+| Feature | Configuration |
+|---------|--------------|
+| **Lakebase** | Set `LAKEBASE_HOST` for rule storage |
+| **AI Analysis** | Set `MODEL_SERVING_ENDPOINT` (default: `databricks-claude-sonnet-4-5`) |
 
-### Workspace Host
-
-Set via environment variable (not in YAML):
-```bash
-export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-```
+See [Configuration](configuration.md) for full details.
 
 ---
 
-## Deployment
-
-### Step-by-Step Deployment
-
-#### 1. Set Workspace
-
-```bash
-export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-```
-
-#### 2. Upload Notebook
-
-```bash
-databricks workspace import notebooks/generate_dq_rules_fast.py \
-  /Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast \
-  --language PYTHON --overwrite
-```
-
-#### 3. Update Notebook Path
-
-Edit `environments/dev/variables.yml`:
-```yaml
-targets:
-  dev:
-    variables:
-      notebook_path: "/Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast"
-```
-
-#### 4. Validate and Deploy
-
-```bash
-# Validate configuration
-databricks bundle validate -t dev
-
-# Deploy (creates Job + App)
-databricks bundle deploy -t dev
-```
-
-#### 5. Get Job ID
-
-```bash
-databricks jobs list --output json | grep -A2 "DQ Rule Generation"
-```
-
-#### 6. Update src/app.yaml
-
-```yaml
-env:
-  - name: DQ_GENERATION_JOB_ID
-    value: "<job-id-from-step-5>"
-```
-
-#### 7. Redeploy
-
-```bash
-databricks bundle deploy -t dev
-```
-
-### Multi-Environment Deployment
+## Multi-Environment Deployment
 
 | Target | Command | App Name |
 |--------|---------|----------|
@@ -269,31 +136,51 @@ databricks bundle deploy -t dev
 
 ### Workflow
 
-1. **Select Table**: Choose Catalog → Schema → Table → Preview Data
-2. **Generate Rules**: Enter natural language prompt → Click Generate
-3. **Review**: Edit JSON rules → Format → Validate
-4. **Save**: Analyze with AI (optional) → Confirm & Save to Lakebase
+```mermaid
+flowchart LR
+    A[1. Select Table] --> B[2. Generate Rules]
+    B --> C[3. Review & Edit]
+    C --> D[4. Validate]
+    D --> E[5. Save]
+```
 
-### Example Prompts
+### Step 1: Select Table
 
+1. Select Catalog from dropdown
+2. Select Schema
+3. Select Table
+4. Preview sample data
+
+### Step 2: Generate Rules
+
+1. Enter natural language prompt describing your requirements
+2. Click "Generate Rules"
+3. Wait for job completion (typically 1-3 minutes)
+
+**Example Prompts:**
 ```
 "Ensure customer_id is not null and unique"
 "Validate email format and check age is between 0 and 120"
 "Check order_date is not in the future and amount is positive"
 ```
 
-### Rule Format
+### Step 3: Review & Edit
 
-```json
-{
-  "check": "is_not_null",
-  "column": "customer_id",
-  "name": "customer_id_not_null",
-  "criticality": "error"
-}
-```
+1. Review generated rules in JSON format
+2. Edit rules as needed
+3. Use "Format JSON" to clean up formatting
 
-See [dqx-checks.md](dqx-checks.md) for all available check functions.
+### Step 4: Validate (Optional)
+
+1. Click "Validate Rules" to test against actual data
+2. Review pass/fail statistics
+3. Fix rules with high violation counts
+
+### Step 5: Save to Lakebase
+
+1. Click "Analyze with AI" for rule coverage insights
+2. Click "Confirm & Save" to store rules
+3. Rules are versioned automatically
 
 ---
 
@@ -315,9 +202,8 @@ Configure per environment in GitHub Settings → Secrets:
 |--------|-------------|
 | `DATABRICKS_HOST` | Workspace URL |
 | `DATABRICKS_CLIENT_ID` | Service Principal Client ID |
-| `LAKEBASE_HOST` | Lakebase PostgreSQL host (optional) |
-| `LAKEBASE_DATABASE` | Lakebase database name (optional) |
-| `MODEL_SERVING_ENDPOINT` | AI model endpoint (optional) |
+| `SQL_WAREHOUSE_ID` | SQL Warehouse ID |
+| `LAKEBASE_HOST` | (Optional) Lakebase host |
 
 ### GitHub OIDC Setup
 
@@ -334,7 +220,7 @@ Configure per environment in GitHub Settings → Secrets:
    ```
 3. Grant workspace access to the service principal
 
-See [ci-cd.md](ci-cd.md) for detailed setup.
+See [CI/CD Pipeline](ci-cd.md) for detailed setup.
 
 ---
 
@@ -344,22 +230,31 @@ See [ci-cd.md](ci-cd.md) for detailed setup.
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| "No catalogs available" | No permissions or warehouse down | Check `USE CATALOG` permission, verify SQL Warehouse is running |
-| "Job failed to start" | Wrong Job ID or no permissions | Verify `DQ_GENERATION_JOB_ID` in src/app.yaml |
-| "Lakebase connection failed" | Wrong host or service down | Verify `LAKEBASE_HOST`, check Lakebase status |
-| "AI Analysis unavailable" | Endpoint not configured | Verify `MODEL_SERVING_ENDPOINT` exists |
+| "No catalogs available" | Missing permissions or warehouse down | Check `USE CATALOG` permission, verify SQL Warehouse is running |
+| "Job failed: Unable to access notebook" | Notebook path issue | Ensure using `${workspace.root_path}/notebooks/...` in variables.yml |
+| "Lakebase connection failed" | Wrong host or not authenticated | Verify `LAKEBASE_HOST`, ensure user is logged in via Databricks Apps |
+| "AI Analysis unavailable" | Endpoint not configured | Verify `MODEL_SERVING_ENDPOINT` exists and user has access |
 | Bundle validation fails | Missing DATABRICKS_HOST | Run `export DATABRICKS_HOST="..."` |
-| "No command to run" | App source path wrong | Check `source_code_path` in resources/apps.yml points to `../src` |
 
 ### Check Logs
 
 **App Logs:**
-1. Databricks Console → Compute → Apps
-2. Select your app → Logs tab
+```bash
+# Via CLI
+databricks apps logs dqx-rule-generator-dev
+
+# Or via Console
+# Databricks Console → Compute → Apps → Select app → Logs
+```
 
 **Job Logs:**
-1. Databricks Console → Workflows → Job Runs
-2. Select run → View logs
+```bash
+# List recent runs
+databricks jobs list-runs --job-id <JOB_ID> --limit 5
+
+# Get run output
+databricks jobs get-run-output --run-id <RUN_ID>
+```
 
 ### Health Check
 
@@ -372,13 +267,36 @@ Expected response:
 {"status": "healthy", "timestamp": "..."}
 ```
 
-### API Endpoints for Debugging
+### Debug Endpoint
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /health` | App health status |
-| `GET /api/lakebase/status` | Lakebase connection |
-| `GET /api/catalogs` | Test Unity Catalog access |
+```bash
+curl https://<workspace>/apps/dqx-rule-generator-dev/api/debug
+```
+
+---
+
+## Local Development
+
+For local development without Databricks Apps:
+
+```bash
+# Required environment variables
+export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
+export DATABRICKS_TOKEN="your-personal-access-token"
+export DQ_GENERATION_JOB_ID="your-generation-job-id"
+export DQ_VALIDATION_JOB_ID="your-validation-job-id"
+export SQL_WAREHOUSE_ID="your-warehouse-id"
+
+# Optional
+export LAKEBASE_HOST="your-lakebase-host"
+
+# Run the app
+cd src
+pip install -r requirements.txt
+python wsgi.py
+```
+
+Access at: `http://localhost:8000`
 
 ---
 
@@ -387,36 +305,18 @@ Expected response:
 ### Update Application
 
 ```bash
-# Make code changes, then:
+# Make code changes, then redeploy
 databricks bundle deploy -t dev
-```
-
-### Update Notebook
-
-```bash
-databricks workspace import notebooks/generate_dq_rules_fast.py \
-  /Workspace/Users/<your-email>/dqx_agent/generate_dq_rules_fast \
-  --language PYTHON --overwrite
-```
-
-### Local Development
-
-```bash
-export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
-export DATABRICKS_TOKEN="your-token"
-export DQ_GENERATION_JOB_ID="your-generation-job-id"
-export DQ_VALIDATION_JOB_ID="your-validation-job-id"
-
-cd src
-python wsgi.py
 ```
 
 ### View Saved Rules
 
 ```sql
-SELECT * FROM dq_rules
+-- Query Lakebase directly
+SELECT table_name, version, created_at, is_active
+FROM dq_rules_events
 WHERE table_name = 'catalog.schema.table'
-ORDER BY created_at DESC;
+ORDER BY version DESC;
 ```
 
 ### Destroy Deployment
@@ -424,6 +324,9 @@ ORDER BY created_at DESC;
 ```bash
 databricks bundle destroy -t dev
 ```
+
+!!! warning "Destructive Operation"
+    This removes the app, jobs, and all deployed resources. Saved rules in Lakebase are preserved.
 
 ---
 
@@ -436,15 +339,16 @@ databricks bundle destroy -t dev
 | Deploy | `databricks bundle deploy -t dev` |
 | List jobs | `databricks jobs list` |
 | Check health | `curl <app-url>/health` |
-| View app logs | Console → Compute → Apps → Logs |
+| View app logs | `databricks apps logs <app-name>` |
 | Destroy | `databricks bundle destroy -t dev` |
 
 ---
 
 ## Related Documentation
 
-- [Architecture](architecture.md) - System design
 - [Configuration](configuration.md) - Detailed config reference
+- [Authentication](authentication.md) - OBO and security details
+- [Architecture](architecture.md) - System design
 - [API Reference](api-reference.md) - REST endpoints
 - [CI/CD](ci-cd.md) - GitHub Actions setup
 - [DQX Checks](dqx-checks.md) - Available check functions
