@@ -1,0 +1,5 @@
+# CODEOWNERS file - defines who must review and approve pull requests
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# All files in this repository require approval from @Nivethan2893
+* @Nivethan2893
