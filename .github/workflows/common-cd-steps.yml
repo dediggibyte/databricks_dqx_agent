@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     name: Deploy to ${{ inputs.env }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     environment: ${{ inputs.env }}
     env:
       DATABRICKS_AUTH_TYPE: github-oidc
